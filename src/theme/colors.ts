@@ -50,6 +50,7 @@ const primitives = {
     200: '#E2E8F0',
     300: '#CBD5E1',
     400: '#94A3B8',
+    450: '#757680', // 450은 Tailwind 표준 외 값
     500: '#64748B', // 중간 회색 (muted 텍스트)
     600: '#475569',
     700: '#334155',
@@ -64,6 +65,7 @@ const primitives = {
   slateDark: {
     200: '#E1E2EC', // 다크 모드 본문 텍스트 (밝은 회색)
     300: '#C2C6D6',
+    450: '#9CA0AD', // 450은 슬레이트 표준 외 값
     500: '#8C909F',
     700: '#424754',
     780: '#272A31', // 780은 슬레이트 표준 외 값 (다크 컨테이너 high)
@@ -81,8 +83,6 @@ const primitives = {
   },
   // 상태 색상 — 의미가 정해진 색 (모드 무관)
   state: {
-    hot: '#EF4444', // "Hot" 번호 — 자주 출현 (빨강)
-    cold: '#06B6D4', // "Cold" 번호 — 오래 안 나옴 (시안)
     success: '#22C55E', // 성공/긍정 (초록)
     warning: '#F59E0B', // 경고 (주황)
     errorLight: '#DC2626', // 에러 — 라이트 모드용 (진한 빨강)
@@ -147,6 +147,7 @@ export interface ColorsShape {
     default: string; // 기본 보더
     subtle: string; // 매우 흐릿한 구분선
     strong: string; // 강조된 보더
+    control: string; // Checkbox/Radio 등 interactive 컨트롤 보더
   };
   // primary = 브랜드 액션 (버튼, 액티브 탭 등).
   primary: {
@@ -157,8 +158,6 @@ export interface ColorsShape {
   };
   // state = 의미를 가진 상태 색상.
   state: {
-    hot: string;
-    cold: string;
     success: string;
     warning: string;
     error: string;
@@ -202,7 +201,8 @@ export const lightColors: ColorsShape = {
   border: {
     default: primitives.slate[300],
     subtle: primitives.slate[200],
-    strong: primitives.slate[400],
+    strong: primitives.slate[500],
+    control: primitives.slate[450],
   },
   primary: {
     action: primitives.brand.primaryLight, // 진한 파랑 버튼
@@ -211,8 +211,6 @@ export const lightColors: ColorsShape = {
     onContainer: '#1E3A8A', // 그 위 진한 파랑 글자
   },
   state: {
-    hot: primitives.state.hot,
-    cold: primitives.state.cold,
     success: primitives.state.success,
     warning: primitives.state.warning,
     error: primitives.state.errorLight, // 라이트 모드는 진한 빨강 사용
@@ -256,6 +254,7 @@ export const darkColors: ColorsShape = {
     default: primitives.slateDark[700],
     subtle: primitives.slateDark[780],
     strong: primitives.slateDark[500],
+    control: primitives.slateDark[450],
   },
   primary: {
     action: primitives.brand.primaryDark, // 다크 모드용 옅은 파랑
@@ -264,8 +263,6 @@ export const darkColors: ColorsShape = {
     onContainer: '#00285D',
   },
   state: {
-    hot: primitives.state.hot,
-    cold: primitives.state.cold,
     success: primitives.state.success,
     warning: primitives.state.warning,
     error: primitives.state.errorDark, // 다크 모드는 밝은 살구빨강 (가독성)
