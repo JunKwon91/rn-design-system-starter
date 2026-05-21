@@ -1,6 +1,6 @@
 # rn-design-system-starter
 
-> React Native 0.85 디자인 시스템 스타터 — 20개 컴포넌트, 2-tier 토큰, 라이트/다크 자동 전환, 전역 Toast·Dialog 호스트.
+> React Native 0.85 디자인 시스템 스타터 — 22개 컴포넌트, 2-tier 토큰, 라이트/다크 자동 전환, 전역 Toast·Dialog 호스트.
 
 ## Screenshots
 
@@ -73,7 +73,7 @@ npm run ios      # 또는 npm run android
 
 요구사항: Node.js 22.11+, Xcode 16+ (iOS), Android Studio + JDK 17+ (Android).
 
-## 포함 컴포넌트 (20종, 7 카테고리)
+## 포함 컴포넌트 (22종, 7 카테고리)
 
 | 카테고리 | 컴포넌트 | 설명 |
 |---|---|---|
@@ -87,6 +87,8 @@ npm run ios      # 또는 npm run android
 | | `IconButton` | 아이콘 기반 액션 버튼 |
 | **input** | `Input` | 라벨·헬퍼·에러 메시지 지원 텍스트 입력 |
 | | `SearchInput` | 검색 아이콘 + 클리어 버튼이 있는 검색 입력 |
+| | `Checkbox` | Material 3 둥근 사각형 체크박스 (3 size, label 옵션) |
+| | `Radio` / `RadioGroup` | 정원형 라디오 + 그룹 컨테이너 (단일 선택 + 접근성) |
 | **display** | `DataTable` | 타입 안전한 데이터 테이블 (정렬·밀도 옵션) |
 | | `SegmentedControl` | 균등 분할 옵션 선택기 |
 | | `Tabs` | Material 3 underline 가로 탭 |
@@ -142,6 +144,31 @@ const TABS = [
 const [active, setActive] = useState('all');
 
 <Tabs tabs={TABS} value={active} onChange={setActive} />
+```
+
+### Checkbox
+```tsx
+import { Checkbox } from '@/components/input';
+
+const [agreed, setAgreed] = useState(false);
+
+<Checkbox value={agreed} onValueChange={setAgreed} label="약관에 동의합니다" />
+<Checkbox value={agreed} onValueChange={setAgreed} size="lg" />
+<Checkbox value disabled />
+```
+
+### Radio
+```tsx
+import { Radio, RadioGroup } from '@/components/input';
+
+type Plan = 'free' | 'pro' | 'team';
+const [plan, setPlan] = useState<Plan>('pro');
+
+<RadioGroup value={plan} onValueChange={setPlan}>
+  <Radio value="free" label="Free" />
+  <Radio value="pro" label="Pro" />
+  <Radio value="team" label="Team" disabled />
+</RadioGroup>
 ```
 
 ## Toast & Dialog

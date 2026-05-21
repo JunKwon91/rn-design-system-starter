@@ -119,3 +119,30 @@
 - **선택**: `react-native-edge-to-edge` 1.8 패키지 도입. App 루트에서 RN `<StatusBar>` 대신 `<SystemBars />` 사용.
 - **포기한 옵션**: native-stack `statusBarTranslucent`/`statusBarStyle` 옵션 (iOS Info.plist의 `UIViewControllerBasedStatusBarAppearance=YES` 변경 요구), `headerStatusBarHeight: 0` (native-stack 7.x 타입 부재), `styles.xml`의 `windowOptOutEdgeToEdgeEnforcement` (부분 효과 + Native 설정 변경).
 - **근거**: 패키지가 Android 15 edge-to-edge를 정합 관리하면서 iOS에서는 RN StatusBar API로 fallback → Info.plist 변경 불필요. 라이브러리 portability 유지 (sturt fork 사용자가 Native 설정 추가 작업 없음). bottom navigation bar 영역은 각 화면의 `<Screen edges={['bottom']}>` 으로 처리.
+
+---
+
+## ADR-14: Checkbox/Radio API (value + onValueChange) + RadioGroup Context
+
+- **상황**: 신규 Checkbox·Radio 컴포넌트 API 명명. `checked`/`onChange` (HTML 스타일) vs `value`/`onValueChange` (RN core Switch 스타일) 중 선택.
+- **선택**: **`value` + `onValueChange`** (RN Switch와 동일 페어). Radio는 `<RadioGroup value onValueChange>` 컨테이너 + 자식 `<Radio value="...">` 패턴. 그룹은 React Context로 자식에 상태·핸들러 주입.
+- **포기한 옵션**: `checked`/`onChange` (HTML 스타일), `selected`/`onSelectChange`, ref imperative API, Radio 단독 사용 (RadioGroup 없이 individual onChange).
+- **근거**: RN core `<Switch value onValueChange>`와 의미·이름 정합 → 학습 비용 0. Radio는 그룹 단위 의미가 본질이라 RadioGroup 컨테이너 강제 (단독 사용 시 `useRadioGroup()` 훅이 에러) → 그룹 외부 단일 Radio라는 안티패턴 차단 + 접근성 `radiogroup` role 자동 부여. Context 전달은 자식 prop drilling 없이 그룹 내 단일 선택 보장.
+
+---
+
+## ADR-15: `color/border/control` 신규 토큰 추가
+
+- **상황**: Checkbox/Radio enabled border가 기존 `color/border/default` 사용 시 surface/container 배경 위 WCAG 대비 Light 1.48 / Dark 1.76 ✗ (UI 컴포넌트 기준 3.0 미달). 의도된 옅음이 아닌 식별 불가 수준.
+- **선택**: **신규 토큰 `color/border/control`** 추가. Light `#757680` (slate-450) / Dark `#9CA0AD` (slateDark-450). 대비 Light 4.51 / Dark 6.25 → UI 3.0 + 일반 텍스트 4.5 모두 충족. Checkbox/Radio 18 variants의 stroke만 신규 토큰으로 바인딩.
+- **포기한 옵션**: `border/default` 토큰 자체 색 변경 (Divider 3-tier 구조 영향 21건), `border/strong` 재사용 (액션 컨트롤 강조 의도와 충돌), Checkbox만 색 조정 (Radio도 동일 문제).
+- **근거**: 다른 컴포넌트(Input/SearchInput/Card/SegmentedControl은 의도된 옅은 outline) 미영향. 토큰 추가는 1개로 최소화. Material 3 / Polaris도 interactive control과 informational border를 분리하는 별도 토큰을 두는 패턴. Figma `color/border/control` (VariableID 2079:2)과 1:1 정합.
+
+---
+
+## ADR-16: `color/border/strong` Light 색 조정 (slate-400 → slate-500)
+
+- **상황**: Button Secondary outline + Divider strong tier + Dialog action에 사용 중인 `color/border/strong` Light 색이 surface/container 배경 위 대비 2.56으로 UI 3.0 미달. Dark `#8C909F`는 5.13 양호.
+- **선택**: Light 색만 `primitives.slate[400] #94A3B8` → `primitives.slate[500] #64748B` 교체. 대비 2.56 → **4.76** ✓.
+- **포기한 옵션**: Button만 별도 토큰 (사용처 분기 증가), Light/Dark 둘 다 변경 (Dark는 이미 양호), `border/strong`을 `border/control`로 통합 (3-tier 구조에서 strong과 control은 의미가 다름 — strong=강조 outline, control=interactive 컨트롤).
+- **근거**: Divider 3-tier(subtle/default/strong) 톤 격차가 자연스럽게 확대 (default `#CBD5E1` → strong `#64748B`). Tailwind slate-500은 이미 `text/muted` Light와 동일 — 같은 raw 색을 두 의미(muted 텍스트 + strong 보더)로 재사용해도 의미 충돌 없음. 영향 11건 (Button 6 / Divider 2 / Dialog 3) 모두 의도된 강조 강화.
