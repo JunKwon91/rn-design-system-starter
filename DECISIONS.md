@@ -10,7 +10,6 @@
 - **선택**: 의미 기반 7 카테고리 분류 (`primitives / surface / action / input / display / list / feedback`).
 - **포기한 옵션**: Atomic Design 5단계.
 - **근거**: atoms vs molecules 경계가 컴포넌트 추가 때마다 모호해져 분류 회의가 반복 발생. 의미 기반 카테고리는 "이 컴포넌트가 무엇을 하는가"로 결정되어 경계가 안정적. 7개로 묶으면 20개 컴포넌트가 카테고리당 1~5개로 균등 분포.
-- **블로그**: <https://twinspika.tistory.com/45>
 
 ---
 
