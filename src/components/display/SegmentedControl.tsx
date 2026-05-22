@@ -1,9 +1,9 @@
 // ============================================================================
-// SegmentedControl — 분절 선택 컨트롤
+// SegmentedControl — 분절 선택 컨트롤 (M3 Segmented Button)
 // ============================================================================
 //
-// 2~N개의 옵션 중 하나를 선택하는 가로 분절 컨트롤. 정렬 옵션이나 테마 선택
-// 같은 mutually exclusive 선택지에 사용한다. Generic<T>로 value 타입을 좁힐
+// 2~N개의 옵션 중 하나를 선택하는 가로 분절 컨트롤. 활성 indicator가 200ms
+// 슬라이드 transition으로 부드럽게 이동한다. Generic<T>로 value 타입을 좁힐
 // 수 있어 호출처가 잘못된 value를 넘기면 컴파일 시점에 잡힌다.
 //
 // 사용 예:
@@ -18,20 +18,27 @@
 //     onChange={setSort}
 //   />
 //
-// [디자인 토큰]
-// 컨테이너: height 36, borderRadius 10, padding 3 (all), gap 4,
-//   bg surface.containerLow, 1px border.subtle (Light 모드에서 캔버스와
-//   동일 톤이라 윤곽 확보용. border 1px 안쪽 padding 3 = 시각 4px)
-// 각 세그먼트: flex 1, height 30, borderRadius 8
-//   Active   — bg primary.action, 텍스트 primary.onAction
-//   Inactive — bg transparent, 텍스트 text.secondary
-// 텍스트 variant: labelLg (Inter 14/600) — WCAG large text 기준(3.0) 통과로
-//   Light Active(흰 글자 on 진한 파랑) 가독성 명확
-// Pressed 피드백: opacity 0.7 (Button·IconButton 패턴 일관)
+// [디자인 토큰 — M3 Segmented Button]
+// 컨테이너: height 36, borderRadius 18 (pillbox), 1.5px border.strong,
+//   bg transparent, overflow hidden (active indicator + segments 모두 외곽
+//   cornerRadius에 자동 clip)
+// Indicator (Animated.View absolute):
+//   position absolute, top -1.5 (border 영역 침범 + outer clip 처리로 외곽
+//     stroke 안쪽까지 fill — visible padding 0)
+//   height 36 (외곽 height와 동일, border 영역 침범)
+//   left + width Animated.Value (200ms timing, useNativeDriver false)
+//   bg primary.action
+// 각 세그먼트: flex 1, height 36, margin-vertical -1.5 (border 침범 패턴)
+//   Active   — 텍스트 primary.onAction
+//   Inactive — 텍스트 text.secondary
+// 텍스트 variant: labelLg (Inter 14/600)
+// Pressed 피드백: opacity 0.7 (styled.View 내부 처리)
 // ============================================================================
 
-import type { StyleProp, ViewStyle } from 'react-native';
-import styled, { useTheme } from 'styled-components/native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing } from 'react-native';
+import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
+import styled from 'styled-components/native';
 
 import Text from '@/components/primitives/Text';
 
@@ -53,27 +60,45 @@ export interface SegmentedControlProps<T extends string> {
 
 const Container = styled.View`
   height: 36px;
-  border-radius: 10px;
-  padding: 3px;
+  border-radius: 18px;
   flex-direction: row;
-  gap: 4px;
-  border-width: 1px;
-  background-color: ${({ theme }) => theme.colors.surface.containerLow};
-  border-color: ${({ theme }) => theme.colors.border.subtle};
+  border-width: 1.5px;
+  border-color: ${({ theme }) => theme.colors.border.strong};
+  background-color: transparent;
+  overflow: hidden;
+`;
+
+const Indicator = styled(Animated.View)`
+  position: absolute;
+  height: 36px;
+  top: -1.5px;
+  background-color: ${({ theme }) => theme.colors.primary.action};
 `;
 
 const Segment = styled.Pressable`
   flex: 1;
-  height: 30px;
-  border-radius: 8px;
+  height: 36px;
+  margin-top: -1.5px;
+  margin-bottom: -1.5px;
+`;
+
+const SegmentInner = styled.View<{ $pressed: boolean }>`
+  flex: 1;
   align-items: center;
   justify-content: center;
+  opacity: ${({ $pressed }) => ($pressed ? 0.7 : 1)};
+`;
+
+const SegmentLabel = styled(Text)<{ $active: boolean }>`
+  color: ${({ theme, $active }) =>
+    $active ? theme.colors.primary.onAction : theme.colors.text.secondary};
 `;
 
 /**
- * 분절 선택 컨트롤.
+ * 분절 선택 컨트롤 (M3 Segmented Button).
  *
  * Generic<T extends string>로 segments.value와 prop value의 타입이 일치하도록 강제.
+ * 활성 indicator가 200ms 슬라이드 transition으로 부드럽게 이동한다.
  *
  * @example
  * <SegmentedControl
@@ -92,19 +117,60 @@ function SegmentedControl<T extends string>({
   onChange,
   style,
 }: SegmentedControlProps<T>) {
-  const theme = useTheme();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const activeIndex = Math.max(
+    0,
+    segments.findIndex(s => s.value === value),
+  );
+  const segmentWidth =
+    containerWidth > 0 ? containerWidth / segments.length : 0;
+
+  const indicatorLeft = useRef(new Animated.Value(0)).current;
+  const indicatorWidth = useRef(new Animated.Value(0)).current;
+  const isFirstMountRef = useRef(true);
+
+  useEffect(() => {
+    if (segmentWidth === 0) return;
+    const targetLeft = activeIndex * segmentWidth;
+    // 첫 마운트(=onLayout으로 segmentWidth가 처음 잡힐 때): 애니메이션 없이
+    // 즉시 셋팅 — 사용자가 화면에 진입한 직후 indicator가 슬라이드되는
+    // 부자연스러움 방지. 이후 탭으로 activeIndex가 변하면 transition.
+    if (isFirstMountRef.current) {
+      indicatorLeft.setValue(targetLeft);
+      indicatorWidth.setValue(segmentWidth);
+      isFirstMountRef.current = false;
+      return;
+    }
+    Animated.parallel([
+      Animated.timing(indicatorLeft, {
+        toValue: targetLeft,
+        duration: 200,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(indicatorWidth, {
+        toValue: segmentWidth,
+        duration: 200,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [activeIndex, segmentWidth, indicatorLeft, indicatorWidth]);
+
+  const indicatorStyle = useMemo(
+    () => ({ left: indicatorLeft, width: indicatorWidth }),
+    [indicatorLeft, indicatorWidth],
+  );
+
+  const handleLayout = (e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+  };
 
   return (
-    <Container style={style}>
+    <Container style={style} onLayout={handleLayout}>
+      {segmentWidth > 0 && <Indicator style={indicatorStyle} />}
       {segments.map(seg => {
         const isActive = seg.value === value;
-        const segBg = isActive
-          ? theme.colors.primary.action
-          : 'transparent';
-        const textColor = isActive
-          ? theme.colors.primary.onAction
-          : theme.colors.text.secondary;
-
         return (
           <Segment
             key={seg.value}
@@ -112,14 +178,14 @@ function SegmentedControl<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={seg.label}
-            style={({ pressed }) => ({
-              backgroundColor: segBg,
-              opacity: pressed ? 0.7 : 1,
-            })}
           >
-            <Text variant="labelLg" style={{ color: textColor }}>
-              {seg.label}
-            </Text>
+            {({ pressed }) => (
+              <SegmentInner $pressed={pressed}>
+                <SegmentLabel variant="labelLg" $active={isActive}>
+                  {seg.label}
+                </SegmentLabel>
+              </SegmentInner>
+            )}
           </Segment>
         );
       })}
