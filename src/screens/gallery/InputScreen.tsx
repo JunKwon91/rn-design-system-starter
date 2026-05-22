@@ -1,12 +1,12 @@
 // ============================================================================
 // InputScreen — Input 카테고리 갤러리
 // ============================================================================
-// Input · SearchInput · Checkbox · Radio — Tabs 전환 패턴 (4 탭)
+// Input · SearchInput · Checkbox · Radio · Switch — Tabs 전환 패턴 (5 탭)
 // ============================================================================
 
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { useTheme } from 'styled-components/native';
+import { ScrollView } from 'react-native';
+import styled, { useTheme } from 'styled-components/native';
 
 import { Tabs } from '@/components/display';
 import {
@@ -15,6 +15,7 @@ import {
   Radio,
   RadioGroup,
   SearchInput,
+  Switch,
 } from '@/components/input';
 import { Spacer, Text } from '@/components/primitives';
 import { Screen, Section } from '@/components/surface';
@@ -24,11 +25,23 @@ const SECTIONS = [
   { value: 'searchinput', label: 'SearchInput' },
   { value: 'checkbox', label: 'Checkbox' },
   { value: 'radio', label: 'Radio' },
+  { value: 'switch', label: 'Switch' },
 ] as const;
 
 type SectionValue = typeof SECTIONS[number]['value'];
 
 type Plan = 'free' | 'pro' | 'team';
+
+const RowSizes = styled.View`
+  flex-direction: row;
+  gap: 24px;
+  align-items: center;
+`;
+
+const RowNoLabel = styled.View`
+  flex-direction: row;
+  gap: 16px;
+`;
 
 export default function InputScreen() {
   const theme = useTheme();
@@ -48,6 +61,15 @@ export default function InputScreen() {
   // Radio 시연 상태
   const [plan, setPlan] = useState<Plan>('pro');
   const [size, setSize] = useState<'sm' | 'md' | 'lg'>('md');
+
+  // Switch 시연 상태
+  const [notif, setNotif] = useState(true);
+  const [dark, setDark] = useState(false);
+  const [smSwitch, setSmSwitch] = useState(false);
+  const [mdSwitch, setMdSwitch] = useState(true);
+  const [lgSwitch, setLgSwitch] = useState(false);
+  const [noLabelOff, setNoLabelOff] = useState(false);
+  const [noLabelOn, setNoLabelOn] = useState(true);
 
   return (
     <Screen edges={['bottom']} padded={false}>
@@ -154,21 +176,21 @@ export default function InputScreen() {
             <Spacer size="2xl" />
 
             <Section title="Checkbox · sizes (sm / md / lg)">
-              <View style={{ flexDirection: 'row', gap: 24, alignItems: 'center' }}>
+              <RowSizes>
                 <Checkbox value={smChecked} onValueChange={setSmChecked} size="sm" />
                 <Checkbox value={mdChecked} onValueChange={setMdChecked} size="md" />
                 <Checkbox value={lgChecked} onValueChange={setLgChecked} size="lg" />
-              </View>
+              </RowSizes>
             </Section>
             <Spacer size="2xl" />
 
             <Section title="Checkbox · no label (라벨 없음)">
-              <View style={{ flexDirection: 'row', gap: 16 }}>
+              <RowNoLabel>
                 <Checkbox value={false} onValueChange={() => {}} />
                 <Checkbox value onValueChange={() => {}} />
                 <Checkbox value={false} disabled />
                 <Checkbox value disabled />
-              </View>
+              </RowNoLabel>
             </Section>
           </>
         )}
@@ -226,6 +248,42 @@ export default function InputScreen() {
                 <Spacer size="md" />
                 <Radio value="y" label="잠긴 옵션" disabled />
               </RadioGroup>
+            </Section>
+          </>
+        )}
+
+        {activeSection === 'switch' && (
+          <>
+            <Section title="Switch · with label (라벨 포함)">
+              <Text variant="labelSm" color="muted">
+                탭하면 200ms 부드러운 transition
+              </Text>
+              <Switch value={notif} onValueChange={setNotif} label="알림 수신" />
+              <Switch value={dark} onValueChange={setDark} label="다크 모드" />
+              <Switch value={false} label="비활성 옵션 (disabled)" disabled />
+              <Switch value label="비활성 + 켜진 상태" disabled />
+            </Section>
+            <Spacer size="2xl" />
+
+            <Section title="Switch · sizes (sm / md / lg)">
+              <RowSizes>
+                <Switch value={smSwitch} onValueChange={setSmSwitch} size="sm" />
+                <Switch value={mdSwitch} onValueChange={setMdSwitch} size="md" />
+                <Switch value={lgSwitch} onValueChange={setLgSwitch} size="lg" />
+              </RowSizes>
+            </Section>
+            <Spacer size="2xl" />
+
+            <Section title="Switch · no label (라벨 없음 · 4 시각 상태)">
+              <Text variant="labelSm" color="muted">
+                좌부터 Off · On · Disabled-Off · Disabled-On (앞 2개만 탭 가능)
+              </Text>
+              <RowNoLabel>
+                <Switch value={noLabelOff} onValueChange={setNoLabelOff} />
+                <Switch value={noLabelOn} onValueChange={setNoLabelOn} />
+                <Switch value={false} disabled />
+                <Switch value disabled />
+              </RowNoLabel>
             </Section>
           </>
         )}

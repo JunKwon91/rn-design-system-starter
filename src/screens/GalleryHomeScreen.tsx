@@ -29,7 +29,7 @@ const CATEGORIES: CategoryEntry[] = [
   { route: 'Primitives', label: 'Primitives (기본 요소)', subtitle: 'Text · Spacer · Divider', count: 3 },
   { route: 'Surface', label: 'Surface (표면)', subtitle: 'Screen · Card · Section', count: 3 },
   { route: 'Action', label: 'Action (액션)', subtitle: 'Button · IconButton', count: 2 },
-  { route: 'Input', label: 'Input (입력)', subtitle: 'Input · SearchInput · Checkbox · Radio · RadioGroup', count: 5 },
+  { route: 'Input', label: 'Input (입력)', subtitle: 'Input · SearchInput · Checkbox · Radio · RadioGroup · Switch', count: 6 },
   { route: 'Display', label: 'Display (표시)', subtitle: 'DataTable · SegmentedControl · Tabs', count: 3 },
   { route: 'List', label: 'List (리스트)', subtitle: 'SettingsRow', count: 1 },
   {
