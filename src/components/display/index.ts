@@ -15,3 +15,6 @@ export type {
 
 export { default as Tabs } from './Tabs';
 export type { TabsProps, TabItem } from './Tabs';
+
+export { default as Badge } from './Badge';
+export type { BadgeProps, BadgeType, BadgeSize, BadgeColor } from './Badge';
