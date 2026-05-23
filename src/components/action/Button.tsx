@@ -30,7 +30,8 @@
 //   - primary:     bg theme.colors.primary.action, text theme.colors.primary.onAction
 //   - secondary:   bg transparent, border 1px theme.colors.border.strong,
 //                  text theme.colors.text.secondary
-//   - destructive: bg theme.colors.state.error, text 흰색 (Dialog confirm 삭제 등)
+//   - destructive: bg theme.colors.state.error, text theme.colors.primary.onAction
+//                  (Dialog confirm 삭제 등 — Badge destructive 패턴과 동일)
 //
 // [상태]
 // disabled: opacity 0.4 + onPress 차단
@@ -134,7 +135,7 @@ export default function Button({
     variant === 'primary'
       ? theme.colors.primary.onAction
       : variant === 'destructive'
-        ? '#FFFFFF'
+        ? theme.colors.primary.onAction
         : theme.colors.text.secondary;
 
   const computeStyle = ({
@@ -188,7 +189,10 @@ export default function Button({
               {label}
             </Text>
           ) : variant === 'destructive' ? (
-            <Text variant={textVariant} style={{ color: '#FFFFFF' }}>
+            <Text
+              variant={textVariant}
+              style={{ color: theme.colors.primary.onAction }}
+            >
               {label}
             </Text>
           ) : (
