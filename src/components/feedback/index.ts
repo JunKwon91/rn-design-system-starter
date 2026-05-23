@@ -20,3 +20,6 @@ export { default as Dialog } from './Dialog';
 export type { DialogProps } from './Dialog';
 
 export { default as DialogHost } from './DialogHost';
+
+export { default as Skeleton } from './Skeleton';
+export type { SkeletonProps } from './Skeleton';
