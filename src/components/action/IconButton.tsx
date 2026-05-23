@@ -92,6 +92,14 @@ const CONTAINER_SIZE: Record<IconButtonSize, number> = {
 };
 const ICON_SIZE: Record<IconButtonSize, number> = { sm: 16, md: 20, lg: 24 };
 
+// hitSlop — M3 권장 48×48 터치 영역 보장
+// sm 24 + 12*2 = 48 / md 32 + 8*2 = 48 / lg 44 + 2*2 = 48
+const HIT_SLOP: Record<IconButtonSize, { top: number; bottom: number; left: number; right: number }> = {
+  sm: { top: 12, bottom: 12, left: 12, right: 12 },
+  md: { top: 8, bottom: 8, left: 8, right: 8 },
+  lg: { top: 2, bottom: 2, left: 2, right: 2 },
+};
+
 /**
  * 아이콘만 가지는 액션 버튼.
  *
@@ -154,6 +162,7 @@ export default function IconButton({
       style={computeStyle}
       disabled={disabled}
       onPress={onPress}
+      hitSlop={HIT_SLOP[size]}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       accessibilityLabel={accessibilityLabel}
