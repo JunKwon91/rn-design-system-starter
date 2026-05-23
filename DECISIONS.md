@@ -199,3 +199,32 @@
 - **선택**: **4 variants** (small 40 / default 56 / large 96 / extended) **× primary 단일 color**. 모든 variant `cornerRadius = height/2` (정원형 / extended는 pill). M3 Elevation 3 dual-shadow(iOS shadowColor + Android elevation 6). 아이콘은 `cloneElement`로 size·color 자동 주입(IconButton 패턴 일관).
 - **포기한 옵션**: M3 표준 둥근 사각형(default cornerRadius 16) — 시각 인지 모호(IconButton과 혼동), 2 colors(primary + secondary) — secondary FAB 사용 빈도 낮음 + surface fill이 라이브러리 wrapper 위 가독성 약함, color/icon 별도 prop — IconButton과 일관성 부족.
 - **근거**: react-native-paper FAB가 정원형(M3 적용 + 모바일 RN 사용자 익숙)이고 본인 사이클 시각 검증에서 정원형이 인지 명확. extended pill 모양도 정원 연장(height/2)으로 시각 일관. 1 color는 FAB의 본질("primary action 강조 buton") 정합 — secondary는 일반 Button으로 대체 가능. action 카테고리 — 액션 트리거 컴포넌트이므로.
+
+---
+
+## ADR-23: Skeleton API — discriminated props (rect/circle/text)
+
+- **상황**: Skeleton placeholder 3 type 시연 필요. 단일 prop + 옵셔널(props 조합 추론) vs discriminated union vs compound 컴포넌트(Skeleton.Rect 등) 중 선택. 애니메이션 라이브러리도 같이 결정 — Reanimated 미설치 상태.
+- **선택**: **discriminated union 타입** `SkeletonProps = { type: 'rect'; width; height } | { type: 'circle'; size } | { type: 'text'; lines?; lineWidths?; lineHeight? }`. **RN core `Animated.Value` + `Animated.loop`** 사용 (의존성 0 추가). backgroundColor interpolation으로 `surface/containerHigh` ↔ `border/default` 750ms × 2 (1.5s cycle) 무한 반복.
+
+> **shimmer 토큰 결정 변경 이력**: 초기 Figma 사양은 `surface/containerHigh` ↔ `surface/container` (대비 Light 1.06 / Dark 1.13)였으나, 시뮬레이터 검증에서 두 surface 토큰 명도 차이가 너무 작아 placeholder 인지 불가. 사용자 결정으로 highlight 끝점을 `border/default`로 변경 (대비 Light ~1.41 / Dark ~1.5 — 인지 가능 수준). Figma Skeleton 페이지(23 placeholder 노드)도 같은 토큰으로 갱신해 코드↔Figma 1:1 정합 유지. 토큰 차원 이슈로 **v1.x 후순위 항목 추가** — surface 토큰 계층(container-lowest/low/base/high/highest 5단) 명도 재설계 검토 (현재 인접 단계 대비 1.06~1.13으로 시각 인지에 부족).
+- **포기한 옵션**: 단일 prop + 옵셔널 (type 없이 props 조합으로 분기 — 타입 안전성 부족), compound `Skeleton.Rect`/`Skeleton.Circle` (사이클 1 Badge `type` prop 패턴과 불일치), Reanimated 도입(미설치 + sysclock 1.5s 단순 transition에 core Animated 충분), translateX shimmer + LinearGradient(linear-gradient 미설치).
+- **근거**: Badge `type='dot'\|'count'\|'label'` + value 패턴 정합 — 라이브러리 내 type-discriminated API 일관. discriminated union으로 IDE 자동 완성·런타임 안전성 확보. RN core Animated는 Switch 사이클(ADR-17)에서 동일 패턴 검증 완료 — 의존성 추가 0 원칙 유지(사이클 1·2 누적 신규 토큰 0 + 신규 의존성 0).
+
+---
+
+## ADR-24: Chip 4 variant + lucide-react-native 표준 점유율
+
+- **상황**: Material 3 Chip 4 variant(Filter/Assist/Input/Suggestion) 시각 차별화 + 아이콘 점유율 결정. compound vs 단일 컴포넌트 + variant prop, 100% / 75% 통일 점유율 vs lucide 비대칭 점유율 중 선택.
+- **선택**: **단일 컴포넌트 + variant prop** (`<Chip variant='filter'\|... />`). **lucide-react-native 표준 비대칭 점유율** 그대로 채택 — Check 67/46%, Plus 58%, Star 67/83%, X 50% (viewBox 24 기준). RN 코드에서 `lucide-react-native`의 `<Check>` `<Plus>` `<Star>` `<X>` 컴포넌트 import → Figma도 동일 lucide path scaled로 작성 → **Figma↔코드 1:1 자동 정합** (Switch 사이클 81/81 정합 패턴 재현). variant별 시각: Filter outlined(selected 시 filled primary), Assist outlined + 좌측 icon, Input filled + 좌측 icon + close X, Suggestion outlined + text/muted 옅음.
+- **포기한 옵션**: compound `Chip.Filter`/`Chip.Assist` (Badge/FAB type prop 패턴과 불일치), 75% 단일 점유율(Check가 selected 의미 강조에 약함 + 모든 아이콘 단조), 100% 점유율(visible 영역 과대 + 의미적 시각 무게 차이 사라짐), 자체 path 작성(lucide 표준 일관성 손실).
+- **근거**: lucide 비대칭 점유율은 아이콘 의미적 무게(Check selected 보조 < Star 콘텐츠 > X close 보조)와 일관 — Material Symbols + lucide 표준이 이미 가이드라인 검증. Figma 정합 — 사이클 2 Figma 작업에서 frame-wrap 패턴으로 점유율 정합(각 아이콘 vector frame 14/16 size + inner vector lucide path scaled + 중앙 정렬) → RN 코드의 lucide import와 visual 1:1 정합. **신규 토큰 0 추가** (Badge/FAB 패턴 유지) — `border/control`(ADR-15 추가) + `surface/containerHigh` + `text/secondary` + `text/muted` + `primary/action` + `primary/onAction` 모두 기존 토큰 재사용.
+
+---
+
+## ADR-25: 인터랙티브 컴포넌트 onPress 동작 검증 체크리스트 (9항목)
+
+- **상황**: 사이클 1·2 누적 학습 — 시각 사양만 정합 검증하다 onPress/onChange 콜백 동작 검증이 누락되는 사례 반복. 사이클 2 후반 보고-실제 불일치 4건(Skeleton CS 의도 / Input X 6·7 / Star→X 렌더링 / RN 시각 검증 누락) + SettingsRow toggle 흐름 검증 누락 + Button destructive `#FFFFFF` 하드코딩 발견 + Skeleton shimmer 토큰 갱신 시 Figma 미동기화 발견 등이 누적되어, 신규 컴포넌트 검증 절차를 단일 체크리스트로 명문화 필요. v1.x 사이클 2 정합 검증 단계에서 7항목 → 9항목으로 확장 (정합 카운트 명시 + 인라인 스타일 분류 A=0건 추가).
+- **선택**: **9항목 체크리스트** — (1) **Figma 측정 → RN 1:1 정합** — width/height/paddingH/cornerRadius/font-size/icon size 모두 px 단위 일치. (2) **Light/Dark 양 모드 시각 검증** — 토큰 매핑이 두 모드 모두 의도대로 작동(`text.primary`/`surface.containerHigh`/`primary.onAction` 등 mode-aware swap 확인). (3) **accessibility 속성** — `accessibilityRole`/`accessibilityState`/`accessibilityLabel` 누락 없음(특히 IconButton·FAB·Chip 등 텍스트 단독으로 의미 전달 어려운 컴포넌트). (4) **상태별 시각 차이** — default/pressed(opacity 0.7)/disabled(opacity 0.4~0.5)/selected/loading 각 상태가 시각 토큰으로 명확히 구별. (5) **onPress/onChange/onValueChange 콜백 시뮬레이터 검증** — 시각 변화가 있는 컴포넌트(Tabs/SegmentedControl/Switch 등)는 선택 텍스트 표시로 검증, 시각 변화가 없는 컴포넌트(Button/IconButton/FAB/EmptyState action 등)는 `Alert.alert` 시연 패턴으로 검증. disabled 인스턴스도 동일 콜백 연결 후 탭 시 Alert 안 떠야 정상. (6) **M3 48×48 터치 영역 충족** — sm 사이즈(24×24·28×28 등)는 `hitSlop` 적용 필수(IconButton sm: hitSlop 12 → 48×48). (7) **보고 기준** — "본인 직접 확인 완료" 표기 + 측정값/코드 라인 인용으로 검증 근거 명시. (8) **Figma↔RN 측정값 N/N 정합 카운트 명시 보고** — 컴포넌트 추가·변경 시 측정값 1:1 비교 표 작성 + 정합 카운트 명시(사이클 1 Switch 81/81 / 사이클 2 Chip 38/38 / Button 18/18 / Skeleton 16/16 패턴). 의도된 정정은 별도 표기(예: "53/54, 의도 정정 1건 — 사용자 결정으로 토큰 변경"). (9) **인라인 스타일 분류 A = 0건 확인** — `grep -rn "style={{" src/`로 전수 조사 후 분류: A(하드코딩 색상/토큰 우회 — 정정 필요), B(Animated 동적 / Pressable callback / 토큰 사용 — 유지), C(갤러리 시연 layout — 토큰 사용 유지), D(주석 false positive). 분류 A는 사이클 종료 전 반드시 0건 도달 — `#FFFFFF` 등 하드코딩 색상은 라이브러리 토큰으로 정정, 토큰 우회 spacing/margin은 `theme.spacing.*` 또는 styled로 분리.
+- **포기한 옵션**: 시각 사양 검증만 유지(흐름·동작 검증 미수행 — 사이클 2 첫 사용자 발견 누락 패턴), 컴포넌트별 개별 체크리스트(관리 부담 + 공통 항목 중복), 자동화 테스트 도입(`@testing-library/react-native` 의존성 추가 + v1.x 스타터 범위 초과 — 의존성 0 추가 원칙 위반), 보고 시 검증 근거 자유 형식(불일치 누적 차단 실패), 정합 카운트 비명시(사이클 1 Badge/FAB 종료 시 N/N 명시 누락 → 사이클 2 재검증에서 패턴 누락 학습), 인라인 스타일 미관리(라이브러리 품질 저하 — 토큰 시스템 우회가 보이지 않는 곳에서 누적).
+- **근거**: 사이클 2 후반 누적 실수가 모두 "수치 일치 검증"으로는 잡히지 않고 "흐름·렌더링 검증"이 필요한 케이스 — 단일 체크리스트로 통합 관리. Alert.alert 시연은 의존성 추가 없이 onPress 호출 동작을 즉시 확인 — RN core API 사용 + 갤러리 화면 내 인라인 검증 가능. hitSlop은 시각 영역과 별개로 터치 영역만 확장하므로 M3 권장 영역(48×48) 보장이 시각 사양에 영향을 주지 않음. "본인 직접 확인" 표기는 보고-실제 불일치 차단의 marker — 측정값/라인 인용 강제로 추측 보고 방지. 정합 카운트 명시(8번)는 Switch 81/81 패턴을 재현 가능한 의무 보고 형식으로 승격 — 정합 불일치 발견 시 해당 카운트의 어느 항목이 어긋났는지 즉시 식별. 인라인 스타일 분류(9번)는 토큰 시스템이 우회되는 단일 지점을 정기 점검 — 사이클 2에서 Button `'#FFFFFF'` 2건 + Dialog `marginTop: 4` 1건 발견 후 학습. 신규 의존성 0 추가 원칙(사이클 1·2 누적) 유지 — 자동화 도입은 v2.x 이후 검토.

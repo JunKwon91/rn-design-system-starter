@@ -1,6 +1,6 @@
 # rn-design-system-starter
 
-> React Native 0.85 디자인 시스템 스타터 — 25개 컴포넌트, 2-tier 토큰, 라이트/다크 자동 전환, 전역 Toast·Dialog 호스트.
+> React Native 0.85 디자인 시스템 스타터 — 27개 컴포넌트, 2-tier 토큰, 라이트/다크 자동 전환, 전역 Toast·Dialog 호스트.
 
 ## Screenshots
 
@@ -71,10 +71,20 @@
 |:---:|:---:|
 | ![badge light](docs/screenshots/badge-light.png) | ![badge dark](docs/screenshots/badge-dark.png) |
 
+### Display — Chip (칩)
+| Light | Dark |
+|:---:|:---:|
+| ![chip light](docs/screenshots/chip-light.png) | ![chip dark](docs/screenshots/chip-dark.png) |
+
 ### List — SettingsRow (설정 행)
 | Light | Dark |
 |:---:|:---:|
 | ![list light](docs/screenshots/settings-row-light.png) | ![list dark](docs/screenshots/settings-row-dark.png) |
+
+### Feedback — Skeleton (스켈레톤)
+| Light | Dark |
+|:---:|:---:|
+| ![skeleton light](docs/screenshots/skeleton-light.png) | ![skeleton dark](docs/screenshots/skeleton-dark.png) |
 
 ### Feedback — Toast (토스트)
 | Light | Dark |
@@ -98,7 +108,7 @@ npm run ios      # 또는 npm run android
 
 요구사항: Node.js 22.11+, Xcode 16+ (iOS), Android Studio + JDK 17+ (Android).
 
-## 포함 컴포넌트 (25종, 7 카테고리)
+## 포함 컴포넌트 (27종, 7 카테고리)
 
 | 카테고리 | 컴포넌트 | 설명 |
 |---|---|---|
@@ -120,10 +130,12 @@ npm run ios      # 또는 npm run android
 | | `SegmentedControl` | 균등 분할 옵션 선택기 |
 | | `Tabs` | Material 3 underline 가로 탭 |
 | | `Badge` | 상태·카운트·라벨 표시 (3 types × 2 sizes × 4 colors, 99+ 자동 처리) |
+| | `Chip` | Material 3 선택·필터·태그 칩 (4 variants × 2 sizes × 3 states, lucide 표준 점유율) |
 | **list** | `SettingsRow` | 설정 화면용 행 (5가지 유형) |
 | **feedback** | `EmptyState` | 빈 상태 표현 |
 | | `ErrorView` | 오류 상태 표현 |
 | | `LoadingView` | 로딩 상태 표현 |
+| | `Skeleton` | 콘텐츠 로딩 placeholder (3 types: rect/circle/text, backgroundColor pulse 애니메이션 1.5초) |
 | | `Toast` | 일시적 알림 메시지 (큐잉 + 자동 닫힘) |
 | | `Dialog` | 모달 다이얼로그 (Promise 반환) |
 
@@ -229,6 +241,31 @@ import { FAB } from '@/components/action';
 <FAB variant="small" icon={<Plus />} accessibilityLabel="추가" onPress={...} />
 <FAB variant="large" icon={<Plus />} accessibilityLabel="새 항목" onPress={...} />
 <FAB variant="extended" icon={<Plus />} label="글쓰기" onPress={...} />
+```
+
+### Skeleton
+```tsx
+import { Skeleton } from '@/components/feedback';
+
+<Skeleton type="rect" width={200} height={16} />
+<Skeleton type="circle" size={40} />
+<Skeleton type="text" />                                  // 3 lines 기본
+<Skeleton type="text" lines={2} lineWidths={['100%', '70%']} />
+```
+
+### Chip
+```tsx
+import { Plus, Star } from 'lucide-react-native';
+import { Chip } from '@/components/display';
+
+const [active, setActive] = useState(false);
+
+<Chip variant="filter" label="필터" selected={active}
+  onPress={() => setActive(s => !s)} />
+<Chip variant="assist" label="추가" icon={<Plus />} onPress={...} />
+<Chip variant="input" label="태그" icon={<Star />} onPress={...}
+  onClose={() => removeTag()} />
+<Chip variant="suggestion" label="제안" onPress={...} />
 ```
 
 ## Toast & Dialog
