@@ -35,8 +35,8 @@ const CATEGORIES: CategoryEntry[] = [
   {
     route: 'Feedback',
     label: 'Feedback (피드백)',
-    subtitle: 'EmptyState · ErrorView · LoadingView · Skeleton · Progress · Toast · Dialog',
-    count: 7,
+    subtitle: 'EmptyState · ErrorView · LoadingView · Skeleton · Progress · Tooltip · Toast · Dialog',
+    count: 8,
   },
 ];
 

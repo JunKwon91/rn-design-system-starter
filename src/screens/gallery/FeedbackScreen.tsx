@@ -6,8 +6,8 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
-import { Inbox, Search, Star } from 'lucide-react-native';
+import { Alert, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { HelpCircle, Inbox, Search, Settings, Star, Trash } from 'lucide-react-native';
 import styled, { useTheme } from 'styled-components/native';
 
 const SkeletonRow = styled.View`
@@ -62,7 +62,77 @@ const CircularItem = styled.View`
   gap: 8px;
 `;
 
-import { Button } from '@/components/action';
+const TooltipGrid = styled.View`
+  gap: 56px;
+  padding-top: 32px;
+  padding-bottom: 32px;
+`;
+
+const TooltipGridRow = styled.View`
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+`;
+
+const TooltipItem = styled.View`
+  align-items: center;
+  gap: 12px;
+  width: 140px;
+`;
+
+const TooltipCenter = styled.View`
+  align-items: center;
+  padding-top: 48px;
+  padding-bottom: 16px;
+`;
+
+// 라이브러리 종속성 검증 섹션 (RN Pressable / View / TouchableOpacity)
+const VerifyColumn = styled.View`
+  align-items: center;
+  gap: 24px;
+  padding-top: 48px;
+  padding-bottom: 16px;
+`;
+
+const VerifyBox = styled(Pressable)`
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.surface.container};
+  border-width: 1px;
+  border-color: ${({ theme }) => theme.colors.border.default};
+`;
+
+const VerifyBoxView = styled(View)`
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.surface.container};
+  border-width: 1px;
+  border-color: ${({ theme }) => theme.colors.border.default};
+`;
+
+const VerifyBoxTouchable = styled(TouchableOpacity)`
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.surface.container};
+  border-width: 1px;
+  border-color: ${({ theme }) => theme.colors.border.default};
+`;
+
+const VerifyCase = styled.View`
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm}px;
+`;
+
+import { Button, IconButton } from '@/components/action';
 import { Tabs } from '@/components/display';
 import {
   CircularProgress,
@@ -71,6 +141,7 @@ import {
   LinearProgress,
   LoadingView,
   Skeleton,
+  Tooltip,
 } from '@/components/feedback';
 import { Spacer, Text } from '@/components/primitives';
 import { Screen, Section } from '@/components/surface';
@@ -83,6 +154,7 @@ const GROUPS = [
   { value: 'loading-view', label: 'LoadingView (로딩)' },
   { value: 'skeleton', label: 'Skeleton (스켈레톤)' },
   { value: 'progress', label: 'Progress (진행률)' },
+  { value: 'tooltip', label: 'Tooltip (도구 설명)' },
   { value: 'toast', label: 'Toast (토스트)' },
   { value: 'dialog', label: 'Dialog (다이얼로그)' },
 ] as const;
@@ -122,6 +194,36 @@ function DemoCircularDownload() {
       <CircularProgress value={value} size="lg" />
       <Text variant="labelSm" color="muted">{value}%</Text>
     </CircularItem>
+  );
+}
+
+// ---------------- Tooltip 자동 점멸 데모 (visible prop) ----------------
+
+function DemoTooltipBlink() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setVisible(v => !v);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <TooltipItem>
+      <Tooltip
+        text={visible ? '표시 중 (visible=true)' : '곧 다시 표시'}
+        position="top"
+        visible={visible}
+      >
+        <IconButton
+          icon={<HelpCircle />}
+          onPress={() => undefined}
+          accessibilityLabel="자동 점멸 데모"
+        />
+      </Tooltip>
+      <Text variant="labelSm" color="muted">
+        현재 visible={String(visible)}
+      </Text>
+    </TooltipItem>
   );
 }
 
@@ -413,6 +515,110 @@ export default function FeedbackScreen() {
               <CircularRow>
                 <DemoCircularDownload />
               </CircularRow>
+            </Section>
+          </>
+        )}
+
+        {activeGroup === 'tooltip' && (
+          <>
+            <Section title="Tooltip · 4 position (롱프레스 → 표시 유지, 1500ms 후 자동 dismiss)">
+              <TooltipGrid>
+                <TooltipGridRow>
+                  <TooltipItem>
+                    <Text variant="labelSm" color="muted">position="top"</Text>
+                    <Tooltip text="설정 메뉴" position="top">
+                      <IconButton
+                        icon={<Settings />}
+                        onPress={() => undefined}
+                        accessibilityLabel="설정"
+                      />
+                    </Tooltip>
+                  </TooltipItem>
+                  <TooltipItem>
+                    <Text variant="labelSm" color="muted">position="bottom"</Text>
+                    <Tooltip text="이 항목을 삭제합니다" position="bottom">
+                      <IconButton
+                        icon={<Trash />}
+                        onPress={() => undefined}
+                        accessibilityLabel="삭제"
+                      />
+                    </Tooltip>
+                  </TooltipItem>
+                </TooltipGridRow>
+                <TooltipGridRow>
+                  {/* position="right"를 좌측 column / position="left"를 우측 column에
+                      배치 — Tooltip이 항상 화면 안쪽으로 표시되어 좌우 외곽 잘림 방지 */}
+                  <TooltipItem>
+                    <Text variant="labelSm" color="muted">position="right"</Text>
+                    <Tooltip text="도움말 보기" position="right">
+                      <IconButton
+                        icon={<HelpCircle />}
+                        onPress={() => undefined}
+                        accessibilityLabel="도움말"
+                      />
+                    </Tooltip>
+                  </TooltipItem>
+                  <TooltipItem>
+                    <Text variant="labelSm" color="muted">position="left"</Text>
+                    <Tooltip text="검색 시작" position="left">
+                      <IconButton
+                        icon={<Search />}
+                        onPress={() => undefined}
+                        accessibilityLabel="검색"
+                      />
+                    </Tooltip>
+                  </TooltipItem>
+                </TooltipGridRow>
+              </TooltipGrid>
+            </Section>
+            <Spacer size="2xl" />
+
+            <Section title="Tooltip · visible prop 외부 제어 (의도된 데모 — 2초마다 자동 toggle, 롱프레스 불필요)">
+              <TooltipCenter>
+                <DemoTooltipBlink />
+              </TooltipCenter>
+            </Section>
+            <Spacer size="2xl" />
+
+            <Section title="Tooltip · 라이브러리 종속성 검증 (RN 표준 PressableProps 수용 컴포넌트 모두 작동)">
+              <VerifyColumn>
+                <VerifyCase>
+                  <Text variant="labelSm" color="muted">
+                    1) RN Pressable wrap — 예상: ✓ 작동
+                  </Text>
+                  <Tooltip text="RN Pressable wrap 검증">
+                    <VerifyBox
+                      onPress={() => undefined}
+                      accessibilityLabel="RN Pressable 검증"
+                    >
+                      <Text variant="bodySm">RN Pressable</Text>
+                    </VerifyBox>
+                  </Tooltip>
+                </VerifyCase>
+                <VerifyCase>
+                  <Text variant="labelSm" color="muted">
+                    2) RN View wrap — 예상: ❌ silent fail (onLongPress 미수용)
+                  </Text>
+                  <Tooltip text="View wrap 검증 — 작동 안 함 예상">
+                    <VerifyBoxView>
+                      <Text variant="bodySm">RN View (non-Pressable)</Text>
+                    </VerifyBoxView>
+                  </Tooltip>
+                </VerifyCase>
+                <VerifyCase>
+                  <Text variant="labelSm" color="muted">
+                    3) TouchableOpacity wrap — 예상: ✓ 작동
+                  </Text>
+                  <Tooltip text="TouchableOpacity wrap 검증">
+                    <VerifyBoxTouchable
+                      onPress={() => undefined}
+                      accessibilityLabel="TouchableOpacity 검증"
+                    >
+                      <Text variant="bodySm">TouchableOpacity</Text>
+                    </VerifyBoxTouchable>
+                  </Tooltip>
+                </VerifyCase>
+              </VerifyColumn>
             </Section>
           </>
         )}
