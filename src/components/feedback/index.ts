@@ -23,3 +23,11 @@ export { default as DialogHost } from './DialogHost';
 
 export { default as Skeleton } from './Skeleton';
 export type { SkeletonProps } from './Skeleton';
+
+export { LinearProgress, CircularProgress } from './Progress';
+export type {
+  LinearProgressProps,
+  LinearProgressSize,
+  CircularProgressProps,
+  CircularProgressSize,
+} from './Progress';
