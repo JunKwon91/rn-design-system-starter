@@ -5,7 +5,7 @@
 // 17개 섹션을 5 그룹으로 묶고 Tabs로 전환. 각 그룹 안의 섹션은 세로 스크롤.
 // ============================================================================
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { Inbox, Search, Star } from 'lucide-react-native';
 import styled, { useTheme } from 'styled-components/native';
@@ -88,6 +88,42 @@ const GROUPS = [
 ] as const;
 
 type GroupValue = typeof GROUPS[number]['value'];
+
+// ---------------- Progress 다운로드 시뮬레이션 데모 ----------------
+
+const DOWNLOAD_STEP = 5;       // 매 tick 5% 증가
+const DOWNLOAD_INTERVAL = 500; // 500ms 간격 → 10초 cycle (0~100)
+
+function useDownloadProgress(): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setValue(prev => (prev >= 100 ? 0 : prev + DOWNLOAD_STEP));
+    }, DOWNLOAD_INTERVAL);
+    return () => clearInterval(id);
+  }, []);
+  return value;
+}
+
+function DemoLinearDownload() {
+  const value = useDownloadProgress();
+  return (
+    <ProgressColumn>
+      <Text variant="labelSm" color="muted">다운로드 중 · {value}%</Text>
+      <LinearProgress value={value} size="md" />
+    </ProgressColumn>
+  );
+}
+
+function DemoCircularDownload() {
+  const value = useDownloadProgress();
+  return (
+    <CircularItem>
+      <CircularProgress value={value} size="lg" />
+      <Text variant="labelSm" color="muted">{value}%</Text>
+    </CircularItem>
+  );
+}
 
 export default function FeedbackScreen() {
   const theme = useTheme();
@@ -364,6 +400,18 @@ export default function FeedbackScreen() {
                   <CircularProgress variant="indeterminate" size="lg" />
                   <Text variant="labelSm" color="muted">lg ↻</Text>
                 </CircularItem>
+              </CircularRow>
+            </Section>
+            <Spacer size="2xl" />
+
+            <Section title="Linear · 다운로드 시뮬레이션 (500ms +5%, 10초 cycle)">
+              <DemoLinearDownload />
+            </Section>
+            <Spacer size="2xl" />
+
+            <Section title="Circular · 다운로드 시뮬레이션 (500ms +5%, 10초 cycle)">
+              <CircularRow>
+                <DemoCircularDownload />
               </CircularRow>
             </Section>
           </>
