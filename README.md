@@ -122,34 +122,34 @@ npm run ios      # 또는 npm run android
 
 | 카테고리 | 컴포넌트 | 설명 |
 |---|---|---|
-| **primitives** | `Text` | 타이포그래피 시스템 (11 variant, 5 color tone) |
-| | `Spacer` | 표준화된 간격 컨트롤 (vertical·horizontal) |
-| | `Divider` | 시각적 구분선 (subtle·default·strong) |
-| **surface** | `Screen` | 안전 영역 + 표준 padding + 배경을 적용한 화면 컨테이너 |
-| | `Card` | 컨텐츠 그룹화 표면 (제목·메타·구분선 옵션) |
-| | `Section` | 페이지 내 시멘틱 섹션 컨테이너 |
-| **action** | `Button` | 액션 버튼 (primary·secondary·destructive) |
-| | `IconButton` | 아이콘 기반 액션 버튼 |
-| | `FAB` | Material 3 Floating Action Button (4 variants: small·default·large·extended, 정원형) |
-| **input** | `Input` | 라벨·헬퍼·에러 메시지 지원 텍스트 입력 |
-| | `SearchInput` | 검색 아이콘 + 클리어 버튼이 있는 검색 입력 |
-| | `Checkbox` | Material 3 둥근 사각형 체크박스 (3 size, label 옵션) |
-| | `Radio` / `RadioGroup` | 정원형 라디오 + 그룹 컨테이너 (단일 선택 + 접근성) |
-| | `Switch` | Material 3 토글 스위치 (filled track + thumb 사이즈 변화 + 200ms transition) |
-| **display** | `DataTable` | 타입 안전한 데이터 테이블 (정렬·밀도 옵션) |
-| | `SegmentedControl` | 균등 분할 옵션 선택기 |
-| | `Tabs` | Material 3 underline 가로 탭 |
-| | `Badge` | 상태·카운트·라벨 표시 (3 types × 2 sizes × 4 colors, 99+ 자동 처리) |
-| | `Chip` | Material 3 선택·필터·태그 칩 (4 variants × 2 sizes × 3 states, lucide 표준 점유율) |
-| **list** | `SettingsRow` | 설정 화면용 행 (5가지 유형) |
-| **feedback** | `EmptyState` | 빈 상태 표현 |
-| | `ErrorView` | 오류 상태 표현 |
-| | `LoadingView` | 로딩 상태 표현 |
-| | `Skeleton` | 콘텐츠 로딩 placeholder (3 types: rect/circle/text, backgroundColor pulse 애니메이션 1.5초) |
-| | `LinearProgress` / `CircularProgress` | M3 진행률 표시 (3 sizes × determinate/indeterminate, Reanimated v4 + react-native-svg, 12시 시작 시계 방향) |
-| | `Tooltip` | M3 Plain 도구 설명 (4 position, 롱프레스 발동 + visible 외부 제어, max-width 200dp, 1500ms 자동 dismiss) |
-| | `Toast` | 일시적 알림 메시지 (큐잉 + 자동 닫힘) |
-| | `Dialog` | 모달 다이얼로그 (Promise 반환) |
+| **primitives** | `Text` | 텍스트 표시 |
+| | `Spacer` | 요소 사이 간격 |
+| | `Divider` | 영역을 나누는 구분선 |
+| **surface** | `Screen` | 화면 전체를 감싸는 컨테이너 |
+| | `Card` | 관련된 내용을 묶는 표면 |
+| | `Section` | 페이지 안 영역을 구분하는 묶음 |
+| **action** | `Button` | 사용자가 누르는 액션 버튼 |
+| | `IconButton` | 아이콘만으로 누르는 액션 버튼 |
+| | `FAB` | 화면 위에 떠 있는 주요 액션 버튼 |
+| **input** | `Input` | 한 줄 텍스트 입력 |
+| | `SearchInput` | 검색어 입력 + 지우기 |
+| | `Checkbox` | 여러 항목을 다중 선택 |
+| | `Radio` / `RadioGroup` | 여러 항목 중 하나만 선택 |
+| | `Switch` | 켜고 끄기 |
+| **display** | `DataTable` | 표 형태로 데이터 나열 + 정렬 |
+| | `SegmentedControl` | 여러 옵션 중 하나를 가로 분할 형태로 선택 |
+| | `Tabs` | 여러 화면을 탭으로 전환 |
+| | `Badge` | 상태·개수·라벨 표시 |
+| | `Chip` | 태그·필터·선택을 칩 형태로 표시 |
+| **list** | `SettingsRow` | 설정 항목 한 줄 (값 표시·토글·이동·실행) |
+| **feedback** | `EmptyState` | 표시할 내용이 없을 때 안내 |
+| | `ErrorView` | 오류 상황 안내 + 재시도 |
+| | `LoadingView` | 로딩 중 안내 |
+| | `Skeleton` | 콘텐츠 로딩 중 자리 표시 |
+| | `LinearProgress` / `CircularProgress` | 진행률 표시 (막대·원형) |
+| | `Tooltip` | 컴포넌트 길게 누르면 짧은 설명 표시 |
+| | `Toast` | 잠깐 떴다 사라지는 알림 |
+| | `Dialog` | 화면 가운데 떠서 사용자 확인을 받는 창 |
 
 ## 기술 스택
 
