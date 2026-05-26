@@ -1,26 +1,25 @@
 // ============================================================================
-// BottomSheetHost — 단일 BottomSheet 렌더링·애니메이션·드래그 호스트
+// BottomSheetHost — BottomSheet 렌더링·애니메이션·드래그·snap 호스트
 // ============================================================================
 //
 // App 루트에 단 1회만 마운트. useBottomSheetStore.isVisible을 구독해 시트의
-// enter/exit + drag dismiss를 처리. DialogHost 패턴 일관 (전역 호스트 +
+// enter/exit + drag + snap 이동을 처리. DialogHost 패턴 일관 (전역 호스트 +
 // Reanimated v4 + safe-area).
 //
-// [동작 사양 — 사이클 5.1]
-// - 단일 snap 높이 (height prop: 'auto' / '50%' / number)
-// - drag dismiss 임계값: drag 거리 > sheetHeight × 0.3 또는 velocity > 500px/s
-// - enter: spring (Reanimated default), exit: withTiming 150ms
-// - 백드롭 fade 200ms (DialogHost와 같은 토큰 — overlay.scrim)
+// [동작 사양]
+// - snapPoints array (각 element: 'auto' / '50%' / number)
+// - snap 사이 drag 이동 — handle bar 영역만 활성, 콘텐츠 영역은 자유
+//   (RNGH ScrollView 등 scrollable 콘텐츠 자유 wrap 가능)
+// - drag dismiss: 가장 낮은 snap에서 추가 거리 30% 또는 velocity > 500px/s
+// - snap 선택: velocity > 500 시 projection (0.15s), 그 외 가장 가까운 snap
+// - enter / snap 이동 / drag cancel: withTiming(250ms, Easing.out(Easing.cubic))
+// - exit: withTiming(200ms, Easing.in(Easing.cubic)) + 콜백 setShouldRender(false)
+// - 백드롭 fade 200ms (overlay.scrim 토큰)
 // - BackHandler(Android) 자동 dismiss
 // - safe-area 하단 inset 자동 적용
-//
-// [사이클 5.2·5.3 확장 예정]
-// - 다중 snap points
-// - BottomSheetScrollView (drag + scroll 양립)
-// - 키보드 정밀 보정
 // ============================================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BackHandler,
   Pressable,
@@ -40,15 +39,19 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 
-import { useBottomSheetStore, type BottomSheetHeight } from '@/stores/bottomSheetStore';
+import {
+  useBottomSheetStore,
+  type BottomSheetSnap,
+} from '@/stores/bottomSheetStore';
 
 const ENTER_DURATION = 250;
 const EXIT_DURATION = 200;
 const BACKDROP_DURATION = 200;
 const ENTER_EASING = Easing.out(Easing.cubic); // M3 emphasized decelerate
 const EXIT_EASING = Easing.in(Easing.cubic); // M3 emphasized accelerate
-const DRAG_DISTANCE_THRESHOLD = 0.3; // sheetHeight의 30%
+const DRAG_DISTANCE_THRESHOLD = 0.3;
 const DRAG_VELOCITY_THRESHOLD = 500; // px/s
+const SNAP_PROJECTION_TIME = 0.15; // s
 
 const Backdrop = styled(Animated.View)`
   position: absolute;
@@ -74,19 +77,22 @@ const Sheet = styled(Animated.View)`
   elevation: 3;
 `;
 
-const Handle = styled.View`
+const HandleArea = styled.View`
+  align-items: center;
+  padding-top: 12px;
+  padding-bottom: 12px;
+`;
+
+const HandleBar = styled.View`
   width: 32px;
   height: 4px;
   border-radius: 2px;
   background-color: ${({ theme }) => theme.colors.border.default};
-  align-self: center;
-  margin-top: 12px;
 `;
 
 const Content = styled.View`
   padding-left: 16px;
   padding-right: 16px;
-  padding-top: 24px;
   padding-bottom: 24px;
   flex-shrink: 1;
 `;
@@ -99,43 +105,53 @@ const BackdropPressable = styled(Pressable)`
   bottom: 0;
 `;
 
-function resolveSheetHeight(
-  height: BottomSheetHeight,
+function resolveSnapHeight(
+  snap: BottomSheetSnap,
   screenHeight: number,
 ): number {
-  if (typeof height === 'number') return height;
-  if (height === 'auto') return screenHeight * 0.5;
+  if (typeof snap === 'number') return snap;
+  if (snap === 'auto') return screenHeight * 0.5;
   // '50%' 형식 문자열
-  const percent = parseFloat(height) / 100;
+  const percent = parseFloat(snap) / 100;
   return screenHeight * percent;
 }
 
 export default function BottomSheetHost() {
   const isVisible = useBottomSheetStore(s => s.isVisible);
-  const height = useBottomSheetStore(s => s.height);
+  const snapPoints = useBottomSheetStore(s => s.snapPoints);
+  const currentSnapIndex = useBottomSheetStore(s => s.currentSnapIndex);
   const children = useBottomSheetStore(s => s.children);
   const close = useBottomSheetStore(s => s.close);
+  const setCurrentSnapIndex = useBottomSheetStore(s => s.setCurrentSnapIndex);
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
 
-  const sheetHeight = resolveSheetHeight(height, screenHeight);
-  const totalHeight = sheetHeight + insets.bottom;
+  // snap별 픽셀 높이 + Sheet 전체 height + 각 snap의 translateY 사전 계산
+  const { snapTranslateYs, totalHeight, maxSnapTranslateY } = useMemo(() => {
+    const heights = snapPoints.map(s => resolveSnapHeight(s, screenHeight));
+    const maxHeight = Math.max(...heights);
+    const translateYs = heights.map(h => maxHeight - h);
+    return {
+      snapTranslateYs: translateYs,
+      totalHeight: maxHeight + insets.bottom,
+      maxSnapTranslateY: Math.max(...translateYs), // 가장 낮은 snap의 translateY
+    };
+  }, [snapPoints, screenHeight, insets.bottom]);
 
-  // shouldRender — exit 애니메이션이 완료된 후에만 unmount (DialogHost 본질 일관).
-  // isVisible로 unmount 하면 exit 애니메이션 시작 즉시 트리에서 사라져 보이지 않음.
+  // shouldRender — exit 애니메이션 완료 후에만 unmount
   const [shouldRender, setShouldRender] = useState(false);
 
   // closed 상태 = translateY가 totalHeight (화면 밖 아래)
   const translateY = useSharedValue(totalHeight);
   const backdropOpacity = useSharedValue(0);
 
-  // open/close 애니메이션 — slide 자연 (M3 emphasized easing, overshoot 0)
+  // open / close 애니메이션
   useEffect(() => {
     if (isVisible) {
       setShouldRender(true);
-      // 시작 위치 재설정 — totalHeight 변경 또는 재오픈 케이스 대응
       translateY.value = totalHeight;
-      translateY.value = withTiming(0, {
+      const targetY = snapTranslateYs[currentSnapIndex] ?? 0;
+      translateY.value = withTiming(targetY, {
         duration: ENTER_DURATION,
         easing: ENTER_EASING,
       });
@@ -156,7 +172,19 @@ export default function BottomSheetHost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVisible]);
 
-  // BackHandler (Android) — 시트 열려있으면 close
+  // 외부 snapTo 또는 currentSnapIndex 변경 → withTiming 이동
+  useEffect(() => {
+    if (!isVisible) return;
+    const targetY = snapTranslateYs[currentSnapIndex];
+    if (targetY === undefined) return;
+    translateY.value = withTiming(targetY, {
+      duration: ENTER_DURATION,
+      easing: ENTER_EASING,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSnapIndex]);
+
+  // BackHandler (Android)
   useEffect(() => {
     if (!isVisible) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -166,27 +194,61 @@ export default function BottomSheetHost() {
     return () => sub.remove();
   }, [isVisible, close]);
 
-  // drag 제스처
-  const panGesture = Gesture.Pan()
-    .onUpdate(e => {
-      if (e.translationY > 0) {
-        translateY.value = e.translationY;
-      }
-    })
-    .onEnd(e => {
-      const shouldDismiss =
-        e.translationY > sheetHeight * DRAG_DISTANCE_THRESHOLD ||
-        e.velocityY > DRAG_VELOCITY_THRESHOLD;
-      if (shouldDismiss) {
-        runOnJS(close)();
-      } else {
-        // drag cancel 복귀 — timing 일관 (spring overshoot 제거)
-        translateY.value = withTiming(0, {
-          duration: ENTER_DURATION,
-          easing: ENTER_EASING,
-        });
-      }
-    });
+  // drag 제스처 — handle bar 영역만 활성
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onUpdate(e => {
+          'worklet';
+          const baseY = snapTranslateYs[currentSnapIndex];
+          if (baseY === undefined) return;
+          const next = baseY + e.translationY;
+          // 가장 큰 snap (translateY 0)보다 위로는 못 감
+          if (next < 0) return;
+          translateY.value = next;
+        })
+        .onEnd(e => {
+          'worklet';
+          const current = translateY.value;
+          const velocity = e.velocityY;
+
+          // dismiss 판정: 가장 낮은 snap에서 추가 거리 30% 또는 velocity 임계값 초과
+          const extraDrag = current - maxSnapTranslateY;
+          const dismissDistance =
+            (totalHeight - maxSnapTranslateY) * DRAG_DISTANCE_THRESHOLD;
+          if (
+            extraDrag > dismissDistance ||
+            (current > maxSnapTranslateY && velocity > DRAG_VELOCITY_THRESHOLD)
+          ) {
+            runOnJS(close)();
+            return;
+          }
+
+          // snap 선택 — velocity 임계값 초과 시 projection 후 가장 가까운 snap
+          const target =
+            Math.abs(velocity) > DRAG_VELOCITY_THRESHOLD
+              ? current + velocity * SNAP_PROJECTION_TIME
+              : current;
+
+          let nearestIndex = 0;
+          let minDist = Math.abs(snapTranslateYs[0] - target);
+          for (let i = 1; i < snapTranslateYs.length; i++) {
+            const d = Math.abs(snapTranslateYs[i] - target);
+            if (d < minDist) {
+              minDist = d;
+              nearestIndex = i;
+            }
+          }
+
+          translateY.value = withTiming(snapTranslateYs[nearestIndex], {
+            duration: ENTER_DURATION,
+            easing: ENTER_EASING,
+          });
+          runOnJS(setCurrentSnapIndex)(nearestIndex);
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [snapTranslateYs, maxSnapTranslateY, totalHeight, currentSnapIndex],
+  );
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
@@ -204,14 +266,16 @@ export default function BottomSheetHost() {
       <Backdrop style={backdropStyle} pointerEvents="auto">
         <BackdropPressable onPress={close} accessibilityLabel="시트 닫기" />
       </Backdrop>
-      <GestureDetector gesture={panGesture}>
-        <Sheet style={sheetStyle} accessibilityViewIsModal>
-          <Handle />
-          <Content style={{ paddingBottom: 24 + insets.bottom }}>
-            {children}
-          </Content>
-        </Sheet>
-      </GestureDetector>
+      <Sheet style={sheetStyle} accessibilityViewIsModal>
+        <GestureDetector gesture={panGesture}>
+          <HandleArea>
+            <HandleBar />
+          </HandleArea>
+        </GestureDetector>
+        <Content style={{ paddingBottom: 24 + insets.bottom }}>
+          {children}
+        </Content>
+      </Sheet>
     </>
   );
 }
