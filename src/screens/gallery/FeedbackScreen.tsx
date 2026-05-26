@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView as RNGHScrollView } from 'react-native-gesture-handler';
 import { HelpCircle, Inbox, Search, Settings, Star, Trash } from 'lucide-react-native';
 import styled, { useTheme } from 'styled-components/native';
 
@@ -149,6 +150,17 @@ const SheetActions = styled.View`
   flex-direction: row;
   gap: ${({ theme }) => theme.spacing.sm}px;
   justify-content: flex-end;
+`;
+
+const SheetScrollContainer = styled(RNGHScrollView)`
+  max-height: 400px;
+`;
+
+const ScrollItem = styled.View`
+  padding-top: ${({ theme }) => theme.spacing.sm}px;
+  padding-bottom: ${({ theme }) => theme.spacing.sm}px;
+  border-bottom-width: 1px;
+  border-bottom-color: ${({ theme }) => theme.colors.border.subtle};
 `;
 
 import { Button, IconButton } from '@/components/action';
@@ -987,6 +999,162 @@ export default function FeedbackScreen() {
                 </BottomSheetCase>
 
                 <DemoBottomSheetControlled />
+
+                <BottomSheetCase>
+                  <Text variant="labelSm" color="muted">
+                    6) 다중 snap 기본 (25% / 50% / 90%)
+                  </Text>
+                  <Button
+                    label="다중 snap BottomSheet 열기"
+                    variant="primary"
+                    onPress={() =>
+                      bottomSheet.open({
+                        snapPoints: ['25%', '50%', '90%'],
+                        children: (
+                          <SheetContentWrap>
+                            <Text variant="headlineSm" color="primary">
+                              다중 snap
+                            </Text>
+                            <Text variant="bodyBase" color="secondary">
+                              handle bar를 위·아래로 드래그하면 25% / 50% / 90% snap 사이를 이동.
+                              빠른 velocity는 다음 snap 방향으로 자연 이동.
+                            </Text>
+                            <SheetActions>
+                              <Button
+                                label="닫기"
+                                variant="secondary"
+                                onPress={() => bottomSheet.close()}
+                              />
+                            </SheetActions>
+                          </SheetContentWrap>
+                        ),
+                      })
+                    }
+                  />
+                </BottomSheetCase>
+
+                <BottomSheetCase>
+                  <Text variant="labelSm" color="muted">
+                    7) initialSnap 중간 시작 (index 1 = 50%)
+                  </Text>
+                  <Button
+                    label="50%에서 시작하는 BottomSheet 열기"
+                    variant="secondary"
+                    onPress={() =>
+                      bottomSheet.open({
+                        snapPoints: ['25%', '50%', '90%'],
+                        initialSnap: 1,
+                        children: (
+                          <SheetContentWrap>
+                            <Text variant="headlineSm" color="primary">
+                              initialSnap = 1
+                            </Text>
+                            <Text variant="bodyBase" color="secondary">
+                              중간 snap(50%)에서 시작. drag로 위(90%) 또는 아래(25%)로 이동.
+                            </Text>
+                            <SheetActions>
+                              <Button
+                                label="닫기"
+                                variant="secondary"
+                                onPress={() => bottomSheet.close()}
+                              />
+                            </SheetActions>
+                          </SheetContentWrap>
+                        ),
+                      })
+                    }
+                  />
+                </BottomSheetCase>
+
+                <BottomSheetCase>
+                  <Text variant="labelSm" color="muted">
+                    8) snapTo imperative API
+                  </Text>
+                  <Button
+                    label="snapTo 시연 BottomSheet 열기"
+                    variant="secondary"
+                    onPress={() =>
+                      bottomSheet.open({
+                        snapPoints: ['25%', '50%', '90%'],
+                        children: (
+                          <SheetContentWrap>
+                            <Text variant="headlineSm" color="primary">
+                              snapTo 외부 제어
+                            </Text>
+                            <Text variant="bodyBase" color="secondary">
+                              아래 버튼으로 외부에서 snap 변경. drag로도 이동 가능 — 둘 모두 onSnapChange 트리거.
+                            </Text>
+                            <SheetActions>
+                              <Button
+                                label="25%"
+                                variant="secondary"
+                                onPress={() => bottomSheet.snapTo(0)}
+                              />
+                              <Button
+                                label="50%"
+                                variant="secondary"
+                                onPress={() => bottomSheet.snapTo(1)}
+                              />
+                              <Button
+                                label="90%"
+                                variant="secondary"
+                                onPress={() => bottomSheet.snapTo(2)}
+                              />
+                            </SheetActions>
+                            <SheetActions>
+                              <Button
+                                label="닫기"
+                                variant="secondary"
+                                onPress={() => bottomSheet.close()}
+                              />
+                            </SheetActions>
+                          </SheetContentWrap>
+                        ),
+                      })
+                    }
+                  />
+                </BottomSheetCase>
+
+                <BottomSheetCase>
+                  <Text variant="labelSm" color="muted">
+                    9) scrollable content (긴 리스트 + drag 양립)
+                  </Text>
+                  <Button
+                    label="scrollable BottomSheet 열기"
+                    variant="secondary"
+                    onPress={() =>
+                      bottomSheet.open({
+                        snapPoints: ['50%', '90%'],
+                        children: (
+                          <SheetContentWrap>
+                            <Text variant="headlineSm" color="primary">
+                              scrollable content
+                            </Text>
+                            <Text variant="bodyBase" color="secondary">
+                              handle bar drag로 snap 이동, 콘텐츠는 ScrollView로 스크롤 — 양립.
+                            </Text>
+                            <SheetScrollContainer>
+                              {Array.from({ length: 50 }).map((_, i) => (
+                                <ScrollItem key={i}>
+                                  <Text variant="bodyBase" color="primary">
+                                    항목 {i + 1}
+                                  </Text>
+                                </ScrollItem>
+                              ))}
+                            </SheetScrollContainer>
+                            <SheetActions>
+                              <Button
+                                label="닫기"
+                                variant="secondary"
+                                onPress={() => bottomSheet.close()}
+                              />
+                            </SheetActions>
+                          </SheetContentWrap>
+                        ),
+                      })
+                    }
+                  />
+                </BottomSheetCase>
               </BottomSheetCaseColumn>
             </Section>
           </>
