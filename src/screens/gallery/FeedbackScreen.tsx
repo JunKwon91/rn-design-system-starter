@@ -165,6 +165,7 @@ const ScrollItem = styled.View`
 
 import { Button, IconButton } from '@/components/action';
 import { Tabs } from '@/components/display';
+import { Input } from '@/components/input';
 import {
   BottomSheet,
   CircularProgress,
@@ -1149,6 +1150,61 @@ export default function FeedbackScreen() {
                               />
                             </SheetActions>
                           </SheetScrollContainer>
+                        ),
+                      })
+                    }
+                  />
+                </BottomSheetCase>
+
+                <BottomSheetCase>
+                  <Text variant="labelSm" color="muted">
+                    10) TextInput + 키보드 양립 (form 시연)
+                  </Text>
+                  <Button
+                    label="form BottomSheet 열기"
+                    variant="primary"
+                    onPress={() =>
+                      bottomSheet.open({
+                        snapPoints: ['50%', '90%'],
+                        children: (
+                          <SheetContentWrap>
+                            <Text variant="headlineSm" color="primary">
+                              문의 양식
+                            </Text>
+                            <Text variant="bodyBase" color="secondary">
+                              TextInput focus 시 시트가 키보드 위로 자연 이동. 다중 input 사이 focus 이동 자유.
+                            </Text>
+                            <Input label="이름" placeholder="홍길동" />
+                            <Input
+                              label="이메일"
+                              placeholder="example@email.com"
+                              keyboardType="email-address"
+                              autoCapitalize="none"
+                            />
+                            <Input
+                              label="메시지"
+                              placeholder="문의 내용을 입력하세요"
+                              multiline
+                            />
+                            <SheetActions>
+                              <Button
+                                label="닫기"
+                                variant="secondary"
+                                onPress={() => bottomSheet.close()}
+                              />
+                              <Button
+                                label="제출"
+                                variant="primary"
+                                onPress={() => {
+                                  Alert.alert(
+                                    '제출 완료',
+                                    '문의가 접수되었습니다.',
+                                  );
+                                  bottomSheet.close();
+                                }}
+                              />
+                            </SheetActions>
+                          </SheetContentWrap>
                         ),
                       })
                     }
