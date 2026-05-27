@@ -677,3 +677,67 @@ drag 중 `translateY` 변화 → Content height worklet 실시간 동기(60fps) 
 - 시연 케이스 9 본질: `snapPoints: ['25%', '50%', '90%']` + 50 ScrollItem + Spacer + 닫기(SheetActions) 모두 ScrollView 내부 자식 — 모든 snap에서 스크롤로 모든 자식 접근
 - 문서·스크린샷 갱신은 BottomSheet 작업 전체 종료(키보드 정밀 단계 직후)에 일괄 처리
 - v2.x 진화 예정: `BottomSheetScrollView` sub-component (라이브러리 자체 ScrollView wrap + 자동 gap) / `BottomSheetSection` sub-component (header / footer / divider / actions 일관 패턴) / 콘텐츠 영역 조건부 drag (scroll top + 방향 분기) / snap point별 spring config prop / snapPoints 동적 변경 (open 후 갱신)
+
+---
+
+## ADR-31: BottomSheet 키보드 양립 (translateY clamp 패턴)
+
+### 상황
+
+BottomSheet 내부 TextInput focus 시 키보드 출현으로 콘텐츠가 가려지는 현상 발생. iOS / Android 양 환경에서 자동 처리 필요. Sheet height = `totalHeight`(가장 큰 snap 기준 고정) + `translateY`로 snap 위치 결정 구조(ADR-29·30) 기준.
+
+### 선택
+
+- `useAnimatedKeyboard` (Reanimated v4) worklet 통합
+- `sheetStyle` `translateY` 차감 + `Math.max` clamp 패턴
+- AndroidManifest `android:windowSoftInputMode="adjustResize"` (이미 설정됨)
+- 사용자 코드 변경 0 — TextInput을 BottomSheet 자식으로 직접 사용
+
+```ts
+const sheetStyle = useAnimatedStyle(() => {
+  const targetY = translateY.value - keyboard.height.value;
+  const minTranslateY = insets.top - screenHeight + totalHeight;
+  return {
+    height: totalHeight,
+    transform: [{ translateY: Math.max(targetY, minTranslateY) }],
+  };
+});
+```
+
+clamp 계산: 시트 상단 화면 좌표 = `screenHeight - totalHeight + translateY`. 시트 상단을 `insets.top`에 고정하려면 `translateY = insets.top - screenHeight + totalHeight` (= `minTranslateY`). 키보드 출현 시 `targetY`가 `minTranslateY`보다 작아지면 clamp 적용.
+
+### 포기한 옵션
+
+| 옵션 | 사유 |
+|------|------|
+| `KeyboardAvoidingView` wrap (RN core) | absolute positioning 안에서 부분 작동 + Reanimated v4 worklet 패턴(ADR-26)과 불일관 |
+| `Keyboard` API `addListener` (JS thread) | 60fps 동기 어려움 + worklet 패턴 불일관 |
+| `translateY` + `paddingBottom` 동시 보정 | 큰 snap에서 시트 상단이 화면 위로 나감 + 이중 보정으로 부자연 |
+| `paddingBottom`만 보정 (시트 위치 그대로) | 작은 snap에서 시트 자체가 키보드보다 작아 TextInput 가려짐 |
+| `keyboardBehavior` prop (`'interactive'` / `'extend'` / `'fillParent'`) | v1.x API 복잡도 과대 — v2.x 영역으로 이동 |
+| focus 시 자동 snap 이동 (작은 snap → 큰 snap) | v2.x 영역 — focus 이벤트 + snapTo 결합 필요 |
+
+### 근거
+
+Sheet height가 가장 큰 snap 기준 고정(ADR-30)이므로, 키보드 보정은 `translateY`로 시트 자체를 위로 이동시키는 패턴이 자연. 단 큰 snap(90% 등)에서는 시트가 이미 화면을 거의 채우므로 키보드 만큼 위로 이동하면 시트 상단이 화면 위로 나감. `Math.max` clamp로 시트 상단을 화면 상단(`insets.top`) 아래로 유지.
+
+`useAnimatedKeyboard`는 worklet 안에서 `keyboard.height.value`를 60fps shared value로 제공 — sheetStyle worklet과 자연 결합(ADR-26 Reanimated v4 패턴 일관).
+
+### 결과
+
+- 모든 snap에서 TextInput focus 시 시트 자동 정렬
+- 큰 snap (90% 등): 시트 상단 화면 안 clamp + TextInput 가시
+- 중간 snap (50%): 시트가 키보드 위로 자연 이동
+- 사용자 코드: TextInput을 BottomSheet 자식으로 직접 사용 (별도 prop 없음)
+- 키보드 dismiss 시 시트 자연 복귀 (worklet 자동 동기)
+- drag 중 키보드 출현/사라짐 시 60fps 자연 동기
+- Light / Dark / iOS / Android 일관
+- 의존성 추가 0건. 토큰 추가 0건. 인라인 스타일 분류 A 0건 유지
+- 작은 snap(25% 등)에서 TextInput 사용 시 시트 가시 영역이 좁은 한계 — v2.x focus 시 자동 snap 이동 영역
+- 문서·스크린샷 갱신은 BottomSheet 작업 전체 종료(키보드 정밀 단계 직후, 본 작업 단계)에 일괄 처리
+
+### v2.x 진화 예정
+
+- `keyboardBehavior` prop (`'interactive'` / `'extend'` / `'fillParent'`) — 사용자 선택 옵션
+- focus 시 자동 snap 이동 (작은 snap → 큰 snap)
+- `BottomSheetTextInput` sub-component (자동 keyboard handling + scroll into view)
