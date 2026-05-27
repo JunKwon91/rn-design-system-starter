@@ -32,6 +32,7 @@ import {
 import Animated, {
   Easing,
   runOnJS,
+  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -124,6 +125,7 @@ export default function BottomSheetHost() {
   const setCurrentSnapIndex = useBottomSheetStore(s => s.setCurrentSnapIndex);
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
+  const keyboard = useAnimatedKeyboard();
 
   // snap별 픽셀 높이 + Sheet 전체 height + 각 snap의 translateY 사전 계산
   const { snapTranslateYs, totalHeight, maxSnapTranslateY } = useMemo(() => {
@@ -253,10 +255,17 @@ export default function BottomSheetHost() {
     opacity: backdropOpacity.value,
   }));
 
-  const sheetStyle = useAnimatedStyle(() => ({
-    height: totalHeight,
-    transform: [{ translateY: translateY.value }],
-  }));
+  // 시트 상단이 화면 위(insets.top)를 넘지 않도록 clamp.
+  // 시트 상단 화면 좌표 = screenHeight - totalHeight + translateY
+  // 상단을 insets.top에 고정하려면 translateY = insets.top - screenHeight + totalHeight (= minTranslateY)
+  const sheetStyle = useAnimatedStyle(() => {
+    const targetY = translateY.value - keyboard.height.value;
+    const minTranslateY = insets.top - screenHeight + totalHeight;
+    return {
+      height: totalHeight,
+      transform: [{ translateY: Math.max(targetY, minTranslateY) }],
+    };
+  });
 
   // Content height = 현재 가시 영역 - HandleArea — ScrollView 등 flex 자식이 가시 영역과 자연 일치
   const contentStyle = useAnimatedStyle(() => {
