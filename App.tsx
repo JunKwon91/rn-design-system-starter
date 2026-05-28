@@ -37,7 +37,7 @@ import {
   BottomSheetHost,
   DialogHost,
   ToastHost,
-} from '@/components/feedback';
+} from '@/components/modal';
 import RootNavigator from '@/navigation/RootNavigator';
 import { darkTheme, lightTheme } from '@/theme';
 
