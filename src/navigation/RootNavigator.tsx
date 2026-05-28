@@ -1,7 +1,7 @@
 // ============================================================================
 // RootNavigator — Native Stack Navigator
 // ============================================================================
-// 8개 화면: 홈(메뉴) + 7 카테고리. 헤더는 useTheme으로 라이트/다크 모드 자동
+// 9개 화면: 홈(메뉴) + 8 카테고리. 헤더는 useTheme으로 라이트/다크 모드 자동
 // 전환. iOS는 뒤로가기 chevron만 표시(headerBackButtonDisplayMode='minimal').
 // ============================================================================
 
@@ -16,6 +16,7 @@ import InputScreen from '@/screens/gallery/InputScreen';
 import DisplayScreen from '@/screens/gallery/DisplayScreen';
 import ListScreen from '@/screens/gallery/ListScreen';
 import FeedbackScreen from '@/screens/gallery/FeedbackScreen';
+import ModalScreen from '@/screens/gallery/ModalScreen';
 
 import type { RootStackParamList } from './types';
 
@@ -81,6 +82,11 @@ export default function RootNavigator() {
         name="Feedback"
         component={FeedbackScreen}
         options={{ title: 'Feedback (피드백)' }}
+      />
+      <Stack.Screen
+        name="Modal"
+        component={ModalScreen}
+        options={{ title: 'Modal (모달)' }}
       />
     </Stack.Navigator>
   );

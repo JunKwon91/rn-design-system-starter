@@ -35,8 +35,14 @@ const CATEGORIES: CategoryEntry[] = [
   {
     route: 'Feedback',
     label: 'Feedback (피드백)',
-    subtitle: 'EmptyState · ErrorView · LoadingView · Skeleton · Progress · Tooltip · Toast · Dialog · BottomSheet',
-    count: 9,
+    subtitle: 'EmptyState · ErrorView · LoadingView · Skeleton · Progress · Tooltip',
+    count: 6,
+  },
+  {
+    route: 'Modal',
+    label: 'Modal (모달)',
+    subtitle: 'Toast · Dialog · BottomSheet',
+    count: 3,
   },
 ];
 

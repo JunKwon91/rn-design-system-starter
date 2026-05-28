@@ -1,15 +1,28 @@
 // ============================================================================
 // FeedbackScreen — Feedback 카테고리 갤러리
 // ============================================================================
-// EmptyState · ErrorView · LoadingView · Toast · Dialog (5 그룹 탭 패턴).
-// 17개 섹션을 5 그룹으로 묶고 Tabs로 전환. 각 그룹 안의 섹션은 세로 스크롤.
+// EmptyState · ErrorView · LoadingView · Skeleton · Progress · Tooltip (6 그룹
+// 탭 패턴). Toast / Dialog / BottomSheet는 ModalScreen으로 이동.
 // ============================================================================
 
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
-import { ScrollView as RNGHScrollView } from 'react-native-gesture-handler';
 import { HelpCircle, Inbox, Search, Settings, Star, Trash } from 'lucide-react-native';
 import styled, { useTheme } from 'styled-components/native';
+
+import { IconButton } from '@/components/action';
+import { Tabs } from '@/components/display';
+import {
+  CircularProgress,
+  EmptyState,
+  ErrorView,
+  LinearProgress,
+  LoadingView,
+  Skeleton,
+  Tooltip,
+} from '@/components/feedback';
+import { Spacer, Text } from '@/components/primitives';
+import { Screen, Section } from '@/components/surface';
 
 const SkeletonRow = styled.View`
   flex-direction: row;
@@ -37,10 +50,6 @@ const SkeletonCommentRow = styled.View`
 
 const SkeletonCommentLines = styled.View`
   flex: 1;
-`;
-
-const StackedButtons = styled.View`
-  gap: 8px;
 `;
 
 const ProgressList = styled.View`
@@ -133,55 +142,6 @@ const VerifyCase = styled.View`
   gap: ${({ theme }) => theme.spacing.sm}px;
 `;
 
-// BottomSheet 시연용 styled
-const BottomSheetCaseColumn = styled.View`
-  gap: ${({ theme }) => theme.spacing.md}px;
-`;
-
-const BottomSheetCase = styled.View`
-  gap: ${({ theme }) => theme.spacing.xs}px;
-`;
-
-const SheetContentWrap = styled.View`
-  gap: ${({ theme }) => theme.spacing.md}px;
-`;
-
-const SheetActions = styled.View`
-  flex-direction: row;
-  gap: ${({ theme }) => theme.spacing.sm}px;
-  justify-content: flex-end;
-`;
-
-const SheetScrollContainer = styled(RNGHScrollView)`
-  flex: 1;
-`;
-
-const ScrollItem = styled.View`
-  padding-top: ${({ theme }) => theme.spacing.sm}px;
-  padding-bottom: ${({ theme }) => theme.spacing.sm}px;
-  border-bottom-width: 1px;
-  border-bottom-color: ${({ theme }) => theme.colors.border.subtle};
-`;
-
-import { Button, IconButton } from '@/components/action';
-import { Tabs } from '@/components/display';
-import { Input } from '@/components/input';
-import {
-  BottomSheet,
-  CircularProgress,
-  EmptyState,
-  ErrorView,
-  LinearProgress,
-  LoadingView,
-  Skeleton,
-  Tooltip,
-} from '@/components/feedback';
-import { bottomSheet } from '@/stores/bottomSheetStore';
-import { Spacer, Text } from '@/components/primitives';
-import { Screen, Section } from '@/components/surface';
-import { dialog } from '@/stores/dialogStore';
-import { toast, useToastStore } from '@/stores/toastStore';
-
 const GROUPS = [
   { value: 'empty-state', label: 'EmptyState (빈 상태)' },
   { value: 'error-view', label: 'ErrorView (오류)' },
@@ -189,17 +149,12 @@ const GROUPS = [
   { value: 'skeleton', label: 'Skeleton (스켈레톤)' },
   { value: 'progress', label: 'Progress (진행률)' },
   { value: 'tooltip', label: 'Tooltip (도구 설명)' },
-  { value: 'toast', label: 'Toast (토스트)' },
-  { value: 'dialog', label: 'Dialog (다이얼로그)' },
-  { value: 'bottom-sheet', label: 'BottomSheet (바텀시트)' },
 ] as const;
 
 type GroupValue = typeof GROUPS[number]['value'];
 
-// ---------------- Progress 다운로드 시뮬레이션 데모 ----------------
-
-const DOWNLOAD_STEP = 5;       // 매 tick 5% 증가
-const DOWNLOAD_INTERVAL = 500; // 500ms 간격 → 10초 cycle (0~100)
+const DOWNLOAD_STEP = 5;
+const DOWNLOAD_INTERVAL = 500;
 
 function useDownloadProgress(): number {
   const [value, setValue] = useState(0);
@@ -229,48 +184,6 @@ function DemoCircularDownload() {
       <CircularProgress value={value} size="lg" />
       <Text variant="labelSm" color="muted">{value}%</Text>
     </CircularItem>
-  );
-}
-
-// ---------------- Tooltip 자동 점멸 데모 (visible prop) ----------------
-
-// ---------------- BottomSheet controlled mode 데모 (사이클 5.1) ----------------
-
-function DemoBottomSheetControlled() {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <BottomSheetCase>
-      <Text variant="labelSm" color="muted">
-        5) controlled mode (visible prop)
-      </Text>
-      <Button
-        label="controlled BottomSheet 열기 (height 60%)"
-        variant="secondary"
-        onPress={() => setIsOpen(true)}
-      />
-      <BottomSheet
-        visible={isOpen}
-        onDismiss={() => setIsOpen(false)}
-        height="60%"
-      >
-        <SheetContentWrap>
-          <Text variant="headlineSm" color="primary">
-            controlled mode
-          </Text>
-          <Text variant="bodyBase" color="secondary">
-            visible prop으로 외부 제어. drag-down · 백드롭 탭 · Android
-            BackHandler · 아래 닫기 버튼 모두 dismiss.
-          </Text>
-          <SheetActions>
-            <Button
-              label="닫기"
-              variant="secondary"
-              onPress={() => setIsOpen(false)}
-            />
-          </SheetActions>
-        </SheetContentWrap>
-      </BottomSheet>
-    </BottomSheetCase>
   );
 }
 
@@ -563,7 +476,7 @@ export default function FeedbackScreen() {
             </Section>
             <Spacer size="2xl" />
 
-            <Section title="Circular · indeterminate (3 sizes, 1.5s 회전 + arc 35%)">
+            <Section title="Circular · indeterminate (3 sizes, 1s 시계 방향 회전)">
               <CircularRow>
                 <CircularItem>
                   <CircularProgress variant="indeterminate" size="sm" />
@@ -581,636 +494,114 @@ export default function FeedbackScreen() {
             </Section>
             <Spacer size="2xl" />
 
-            <Section title="Linear · 다운로드 시뮬레이션 (500ms +5%, 10초 cycle)">
+            <Section title="다운로드 시뮬레이션 (500ms +5% 10초 cycle)">
               <DemoLinearDownload />
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Circular · 다운로드 시뮬레이션 (500ms +5%, 10초 cycle)">
-              <CircularRow>
-                <DemoCircularDownload />
-              </CircularRow>
+              <Spacer size="lg" />
+              <DemoCircularDownload />
             </Section>
           </>
         )}
 
         {activeGroup === 'tooltip' && (
           <>
-            <Section title="Tooltip · 4 position (롱프레스 → 표시 유지, 1500ms 후 자동 dismiss)">
+            <Section title="Tooltip · 4 position (롱프레스 500ms → 자동 dismiss 1500ms)">
               <TooltipGrid>
                 <TooltipGridRow>
                   <TooltipItem>
-                    <Text variant="labelSm" color="muted">position="top"</Text>
-                    <Tooltip text="설정 메뉴" position="top">
+                    <Tooltip text="위쪽 도구 설명" position="top">
                       <IconButton
                         icon={<Settings />}
                         onPress={() => undefined}
                         accessibilityLabel="설정"
                       />
                     </Tooltip>
+                    <Text variant="labelSm" color="muted">top</Text>
                   </TooltipItem>
                   <TooltipItem>
-                    <Text variant="labelSm" color="muted">position="bottom"</Text>
-                    <Tooltip text="이 항목을 삭제합니다" position="bottom">
+                    <Tooltip text="아래쪽 도구 설명" position="bottom">
+                      <IconButton
+                        icon={<Star />}
+                        onPress={() => undefined}
+                        accessibilityLabel="즐겨찾기"
+                      />
+                    </Tooltip>
+                    <Text variant="labelSm" color="muted">bottom</Text>
+                  </TooltipItem>
+                </TooltipGridRow>
+                <TooltipGridRow>
+                  <TooltipItem>
+                    <Tooltip text="오른쪽 도구 설명" position="right">
                       <IconButton
                         icon={<Trash />}
                         onPress={() => undefined}
                         accessibilityLabel="삭제"
                       />
                     </Tooltip>
-                  </TooltipItem>
-                </TooltipGridRow>
-                <TooltipGridRow>
-                  {/* position="right"를 좌측 column / position="left"를 우측 column에
-                      배치 — Tooltip이 항상 화면 안쪽으로 표시되어 좌우 외곽 잘림 방지 */}
-                  <TooltipItem>
-                    <Text variant="labelSm" color="muted">position="right"</Text>
-                    <Tooltip text="도움말 보기" position="right">
-                      <IconButton
-                        icon={<HelpCircle />}
-                        onPress={() => undefined}
-                        accessibilityLabel="도움말"
-                      />
-                    </Tooltip>
+                    <Text variant="labelSm" color="muted">right</Text>
                   </TooltipItem>
                   <TooltipItem>
-                    <Text variant="labelSm" color="muted">position="left"</Text>
-                    <Tooltip text="검색 시작" position="left">
+                    <Tooltip text="왼쪽 도구 설명" position="left">
                       <IconButton
                         icon={<Search />}
                         onPress={() => undefined}
                         accessibilityLabel="검색"
                       />
                     </Tooltip>
+                    <Text variant="labelSm" color="muted">left</Text>
                   </TooltipItem>
                 </TooltipGridRow>
               </TooltipGrid>
             </Section>
             <Spacer size="2xl" />
 
-            <Section title="Tooltip · visible prop 외부 제어 (의도된 데모 — 2초마다 자동 toggle, 롱프레스 불필요)">
+            <Section title="Tooltip · visible prop (외부 제어 자동 점멸 2초)">
               <TooltipCenter>
                 <DemoTooltipBlink />
               </TooltipCenter>
             </Section>
             <Spacer size="2xl" />
 
-            <Section title="Tooltip · 라이브러리 종속성 검증 (RN 표준 PressableProps 수용 컴포넌트 모두 작동)">
+            <Section title="라이브러리 종속성 검증 (3 케이스 — RN 표준 PressableProps 수용)">
               <VerifyColumn>
                 <VerifyCase>
-                  <Text variant="labelSm" color="muted">
-                    1) RN Pressable wrap — 예상: ✓ 작동
-                  </Text>
-                  <Tooltip text="RN Pressable wrap 검증">
+                  <Text variant="labelSm" color="muted">RN Pressable</Text>
+                  <Tooltip text="RN Pressable wrap 정상 작동" position="top">
                     <VerifyBox
-                      onPress={() => undefined}
-                      accessibilityLabel="RN Pressable 검증"
+                      onPress={() => Alert.alert('Pressable', '클릭됨')}
                     >
-                      <Text variant="bodySm">RN Pressable</Text>
+                      <Text variant="bodyBase" color="primary">
+                        Pressable (롱프레스로 Tooltip)
+                      </Text>
                     </VerifyBox>
                   </Tooltip>
                 </VerifyCase>
                 <VerifyCase>
-                  <Text variant="labelSm" color="muted">
-                    2) RN View wrap — 예상: ❌ silent fail (onLongPress 미수용)
-                  </Text>
-                  <Tooltip text="View wrap 검증 — 작동 안 함 예상">
-                    <VerifyBoxView>
-                      <Text variant="bodySm">RN View (non-Pressable)</Text>
-                    </VerifyBoxView>
+                  <Text variant="labelSm" color="muted">RN View (Pressable wrap)</Text>
+                  <Tooltip text="View는 onLongPress 미수용 → Pressable wrap 필요" position="top">
+                    <Pressable
+                      onPress={() => Alert.alert('View+Pressable', '클릭됨')}
+                    >
+                      <VerifyBoxView>
+                        <Text variant="bodyBase" color="primary">
+                          View (Pressable로 직접 wrap)
+                        </Text>
+                      </VerifyBoxView>
+                    </Pressable>
                   </Tooltip>
                 </VerifyCase>
                 <VerifyCase>
-                  <Text variant="labelSm" color="muted">
-                    3) TouchableOpacity wrap — 예상: ✓ 작동
-                  </Text>
-                  <Tooltip text="TouchableOpacity wrap 검증">
+                  <Text variant="labelSm" color="muted">RN TouchableOpacity</Text>
+                  <Tooltip text="TouchableOpacity는 onLongPress 수용" position="top">
                     <VerifyBoxTouchable
-                      onPress={() => undefined}
-                      accessibilityLabel="TouchableOpacity 검증"
+                      onPress={() => Alert.alert('TouchableOpacity', '클릭됨')}
                     >
-                      <Text variant="bodySm">TouchableOpacity</Text>
+                      <Text variant="bodyBase" color="primary">
+                        TouchableOpacity (롱프레스로 Tooltip)
+                      </Text>
                     </VerifyBoxTouchable>
                   </Tooltip>
                 </VerifyCase>
               </VerifyColumn>
-            </Section>
-          </>
-        )}
-
-        {activeGroup === 'toast' && (
-          <>
-            <Section title="Toast · 3 types (3가지 유형)">
-              <StackedButtons>
-                <Button
-                  label="Success Toast"
-                  variant="primary"
-                  onPress={() =>
-                    toast.success(
-                      '항목이 저장되었습니다',
-                      '선택 항목이 저장되었습니다.',
-                    )
-                  }
-                />
-                <Button
-                  label="Error Toast"
-                  variant="primary"
-                  onPress={() =>
-                    toast.error('저장 실패', '네트워크 연결을 확인해주세요.')
-                  }
-                />
-                <Button
-                  label="Info Toast"
-                  variant="primary"
-                  onPress={() =>
-                    toast.info('새 데이터 도착', '결과가 업데이트되었습니다.')
-                  }
-                />
-              </StackedButtons>
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Toast · sequential (3개 큐 순차 표시)">
-              <Button
-                label="Show 3 Toasts (순차)"
-                variant="secondary"
-                onPress={() => {
-                  toast.success('첫 번째');
-                  toast.info('두 번째');
-                  toast.error('세 번째');
-                }}
-              />
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Toast · queue overflow (큐 초과 → 가장 오래된 것 제거)">
-              <Button
-                label="Show 4 Toasts (queue overflow)"
-                variant="secondary"
-                onPress={() => {
-                  toast.success('첫 번째 (제거됨)');
-                  toast.info('두 번째');
-                  toast.error('세 번째');
-                  toast.info('네 번째 (최신, 보존)');
-                }}
-              />
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Toast · manual dismiss (수동 닫기, duration 0)">
-              <Button
-                label="Show Persistent Toast"
-                variant="secondary"
-                onPress={() =>
-                  useToastStore.getState().show({
-                    type: 'info',
-                    title: '수동 닫기 토스트',
-                    description: 'X 버튼을 눌러 닫으세요',
-                    duration: 0,
-                  })
-                }
-              />
-            </Section>
-          </>
-        )}
-
-        {activeGroup === 'dialog' && (
-          <>
-            <Section title="Dialog · Info (정보)">
-              <Button
-                label="Show Info Dialog"
-                variant="primary"
-                onPress={async () => {
-                  await dialog.info({
-                    title: '네트워크 오류',
-                    description:
-                      '서버에 연결할 수 없습니다. 네트워크 연결을 확인하고 다시 시도해주세요.',
-                  });
-                  console.log('Info 닫힘');
-                }}
-              />
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Dialog · Confirm (확인)">
-              <StackedButtons>
-                <Button
-                  label="Show Confirm (Destructive)"
-                  variant="primary"
-                  onPress={async () => {
-                    const confirmed = await dialog.confirm({
-                      title: '항목 삭제',
-                      description:
-                        '이 항목을 삭제합니다. 이 작업은 되돌릴 수 없습니다.',
-                      destructive: true,
-                      confirmLabel: '삭제',
-                    });
-                    console.log('Confirm 결과:', confirmed);
-                  }}
-                />
-                <Button
-                  label="Show Confirm (Default)"
-                  variant="secondary"
-                  onPress={async () => {
-                    const confirmed = await dialog.confirm({
-                      title: '데이터 갱신',
-                      description: '최신 데이터를 가져옵니다.',
-                    });
-                    console.log('Confirm 결과:', confirmed);
-                  }}
-                />
-              </StackedButtons>
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Dialog · Prompt (입력)">
-              <Button
-                label="Show Prompt Dialog"
-                variant="primary"
-                onPress={async () => {
-                  const value = await dialog.prompt({
-                    title: '텍스트 입력',
-                    description: '값을 입력하세요.',
-                    placeholder: '예시',
-                    confirmLabel: '저장',
-                  });
-                  if (value !== null) {
-                    console.log('Prompt 입력:', value);
-                  } else {
-                    console.log('Prompt 취소');
-                  }
-                }}
-              />
-            </Section>
-            <Spacer size="2xl" />
-
-            <Section title="Dialog · queueing (큐잉 테스트, 순차 표시)">
-              <Button
-                label="Show 2 Dialogs"
-                variant="secondary"
-                onPress={async () => {
-                  const r1 = await dialog.confirm({
-                    title: '첫 번째 (큐 테스트)',
-                    description: '이 다이얼로그가 닫히면 두 번째가 표시됩니다.',
-                  });
-                  console.log('1번 결과:', r1);
-
-                  await dialog.info({
-                    title: '두 번째 (큐 진입)',
-                    description: '큐에서 꺼내져 표시되었습니다.',
-                  });
-                  console.log('2번 완료');
-                }}
-              />
-            </Section>
-          </>
-        )}
-
-        {activeGroup === 'bottom-sheet' && (
-          <>
-            <Section title="BottomSheet (단일 snap · drag dismiss · 백드롭 탭 · BackHandler)">
-              <BottomSheetCaseColumn>
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    1) 기본 height &apos;auto&apos; (화면 50%)
-                  </Text>
-                  <Button
-                    label="기본 BottomSheet 열기"
-                    variant="primary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              기본 BottomSheet
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              height 미지정 시 화면의 50%로 표시. handle bar를 아래로 끌어 dismiss 가능.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    2) 백분율 height (&apos;50%&apos;)
-                  </Text>
-                  <Button
-                    label="50% BottomSheet 열기"
-                    variant="secondary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        height: '50%',
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              50% 높이
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              화면 높이의 50%로 명시적으로 지정. 반응형 — 디바이스마다 픽셀이 달라진다.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    3) 픽셀 height (400px)
-                  </Text>
-                  <Button
-                    label="400px BottomSheet 열기"
-                    variant="secondary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        height: 400,
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              400px 고정 높이
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              디바이스 무관 고정 픽셀 높이. 컨텐츠 양이 정해진 시트에 적합.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    4) imperative API + onDismiss 콜백
-                  </Text>
-                  <Button
-                    label="onDismiss 콜백 BottomSheet"
-                    variant="secondary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        height: '40%',
-                        onDismiss: () =>
-                          Alert.alert('BottomSheet dismiss', 'onDismiss 콜백 호출됨'),
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              dismiss 콜백
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              drag-down · 백드롭 탭 · 닫기 버튼 어느 경로로 닫혀도 onDismiss 콜백이 1회 호출된다.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <DemoBottomSheetControlled />
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    6) 다중 snap 기본 (25% / 50% / 90%)
-                  </Text>
-                  <Button
-                    label="다중 snap BottomSheet 열기"
-                    variant="primary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        snapPoints: ['25%', '50%', '90%'],
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              다중 snap
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              handle bar를 위·아래로 드래그하면 25% / 50% / 90% snap 사이를 이동.
-                              빠른 velocity는 다음 snap 방향으로 자연 이동.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    7) initialSnap 중간 시작 (index 1 = 50%)
-                  </Text>
-                  <Button
-                    label="50%에서 시작하는 BottomSheet 열기"
-                    variant="secondary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        snapPoints: ['25%', '50%', '90%'],
-                        initialSnap: 1,
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              initialSnap = 1
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              중간 snap(50%)에서 시작. drag로 위(90%) 또는 아래(25%)로 이동.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    8) snapTo imperative API
-                  </Text>
-                  <Button
-                    label="snapTo 시연 BottomSheet 열기"
-                    variant="secondary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        snapPoints: ['25%', '50%', '90%'],
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              snapTo 외부 제어
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              아래 버튼으로 외부에서 snap 변경. drag로도 이동 가능 — 둘 모두 onSnapChange 트리거.
-                            </Text>
-                            <SheetActions>
-                              <Button
-                                label="25%"
-                                variant="secondary"
-                                onPress={() => bottomSheet.snapTo(0)}
-                              />
-                              <Button
-                                label="50%"
-                                variant="secondary"
-                                onPress={() => bottomSheet.snapTo(1)}
-                              />
-                              <Button
-                                label="90%"
-                                variant="secondary"
-                                onPress={() => bottomSheet.snapTo(2)}
-                              />
-                            </SheetActions>
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    9) scrollable content (긴 리스트 + drag 양립)
-                  </Text>
-                  <Button
-                    label="scrollable BottomSheet 열기"
-                    variant="secondary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        snapPoints: ['25%', '50%', '90%'],
-                        children: (
-                          <SheetScrollContainer>
-                            <Text variant="headlineSm" color="primary">
-                              scrollable content
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              handle bar drag로 snap 이동, ScrollView 자체 스크롤로 모든 항목과 닫기 버튼 접근. 모든 snap에서 가시 영역과 자연 일치.
-                            </Text>
-                            {Array.from({ length: 50 }).map((_, i) => (
-                              <ScrollItem key={i}>
-                                <Text variant="bodyBase" color="primary">
-                                  항목 {i + 1}
-                                </Text>
-                              </ScrollItem>
-                            ))}
-                            <Spacer size="md" />
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                            </SheetActions>
-                          </SheetScrollContainer>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-
-                <BottomSheetCase>
-                  <Text variant="labelSm" color="muted">
-                    10) TextInput + 키보드 양립 (form 시연)
-                  </Text>
-                  <Button
-                    label="form BottomSheet 열기"
-                    variant="primary"
-                    onPress={() =>
-                      bottomSheet.open({
-                        snapPoints: ['50%', '90%'],
-                        children: (
-                          <SheetContentWrap>
-                            <Text variant="headlineSm" color="primary">
-                              문의 양식
-                            </Text>
-                            <Text variant="bodyBase" color="secondary">
-                              TextInput focus 시 시트가 키보드 위로 자연 이동. 다중 input 사이 focus 이동 자유.
-                            </Text>
-                            <Input label="이름" placeholder="홍길동" />
-                            <Input
-                              label="이메일"
-                              placeholder="example@email.com"
-                              keyboardType="email-address"
-                              autoCapitalize="none"
-                            />
-                            <Input
-                              label="메시지"
-                              placeholder="문의 내용을 입력하세요"
-                              multiline
-                            />
-                            <SheetActions>
-                              <Button
-                                label="닫기"
-                                variant="secondary"
-                                onPress={() => bottomSheet.close()}
-                              />
-                              <Button
-                                label="제출"
-                                variant="primary"
-                                onPress={() => {
-                                  Alert.alert(
-                                    '제출 완료',
-                                    '문의가 접수되었습니다.',
-                                  );
-                                  bottomSheet.close();
-                                }}
-                              />
-                            </SheetActions>
-                          </SheetContentWrap>
-                        ),
-                      })
-                    }
-                  />
-                </BottomSheetCase>
-              </BottomSheetCaseColumn>
             </Section>
           </>
         )}
