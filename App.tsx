@@ -36,6 +36,7 @@ import { ThemeProvider } from 'styled-components/native';
 import {
   BottomSheetHost,
   DialogHost,
+  PopupHost,
   ToastHost,
 } from '@/components/modal';
 import RootNavigator from '@/navigation/RootNavigator';
@@ -56,6 +57,7 @@ export default function App() {
           <DialogHost />
           <ToastHost />
           <BottomSheetHost />
+          <PopupHost />
         </SafeAreaProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -12,3 +12,8 @@ export { default as BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 
 export { default as BottomSheetHost } from './BottomSheetHost';
+
+export { default as Popup } from './Popup';
+export type { PopupProps } from './Popup';
+
+export { default as PopupHost } from './PopupHost';
