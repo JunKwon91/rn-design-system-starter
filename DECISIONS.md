@@ -883,3 +883,89 @@ popup.open({
 - Promise API (복합 결과 정의)
 - anchor positioning (특정 원소 기준)
 - M3 Menu sub-component (cascading menu)
+
+---
+
+## ADR-34: Light surface 5단 계층 재설계 + Dark destructive WCAG 측정
+
+### 상황
+
+v1.x 보강 단계에서 색상/토큰 영역 2가지 후순위 항목 처리:
+1. WCAG Dark destructive 대비 미확인
+2. Light surface 5단 계층 invisible + 단계 역행 발견
+
+**Dark destructive WCAG 측정 결과** — 17개 케이스 측정 (Dark 10 + Light 7):
+
+| 측정 영역 | Dark 대비 | Light 대비 | WCAG |
+|---|---|---|---|
+| Toast error 배경 vs text.primary | 10.6:1 | 17.4:1 | AAA |
+| Button/Dialog/Badge destructive (bg + text) | 10.4:1 | 5.4:1 | AAA / AA |
+| Input error helper text vs canvas | 10.9:1 | 4.6:1 | AAA / AA |
+| ErrorView icon vs canvas | 10.9:1 | 4.6:1 | AAA / UI 3.0 |
+| Toast error 배경 vs 아이콘 | 8.2:1 | 4.7:1 | AAA / AA |
+| Input error border vs surface.container | 9.3:1 | 5.7:1 | AAA / AA |
+
+모든 케이스 WCAG AA 충족, 대부분 AAA 7:1 이상 — Dark destructive 정정 영역 없음.
+
+**Light surface 문제**:
+- `bg.canvas` (`#F8FAFC` L=98) == `surface.containerLow` (`#F8FAFC` L=98) 동일색 → invisible
+- surface 5단 명도 순서 역행 (`container` L=100 > `containerLow` L=98) — 단계 의미와 명도 불일치
+
+### 선택
+
+**Dark destructive**: 변경 0 (모든 측정 케이스 WCAG 충족 확인).
+
+**Light surface M3 패턴 완전 적용 + 단계 의미 정합** — 4 토큰 변경:
+
+| 토큰 | 변경 전 | 변경 후 | L 변화 | primitive |
+|---|---|---|---|---|
+| `bg.canvas` | `#F8FAFC` | `#E2E8F0` | 98 → 92 | slate-50 → slate-200 |
+| `surface.dim` | `#F1F5F9` | `#CBD5E1` | 96 → 87 | slate-100 → slate-300 |
+| `surface.container` | `#FFFFFF` | `#F1F5F9` | 100 → 96 | white → slate-100 |
+| `surface.containerHigh` | `#F1F5F9` | `#E2E8F0` | 96 → 92 | slate-100 → slate-200 |
+
+(`surface.containerLowest` / `surface.containerLow` / `surface.base` / `surface.inverse` / Dark 모드 / primitives / 다른 카테고리 토큰 변경 0)
+
+**새 단계 순서 (점진 어두움)**:
+`Lowest(100)` > `Low(98)` > `container(96)` > `High(92)` ≈ `canvas(92)` > `dim(87)`
+
+- `containerLowest` = L=100 (white) — Modal / Card elevation 유지
+- `canvas` = L=92 < `container` = L=96 → Card가 canvas 위 분리 가능
+- `canvas` = `containerHigh` = L=92 (동일) → Toast는 elevation shadow로 분리
+
+### 포기한 옵션
+
+| 옵션 | 사유 |
+|------|------|
+| 옵션 B (canvas 유지 + 다른 surface만 변경) | invisible 영역만 정정 — 단계 역행 본문 미해결 |
+| 옵션 C (surface 의미 재정의) | M3 의미와 충돌 + 라이브러리 자체 패턴만 |
+| 재설계 생략 | 단계 의미 정합 실패 + invisible 미해결 |
+| Dark destructive 변경 | 17 케이스 측정 결과 모두 WCAG AA 충족 (정정 영역 없음) |
+| 절충 (`container`만 변경, canvas 유지) | container = canvas 충돌 발생 (둘 다 slate-100) |
+| `containerHigh` → slate-300 (canvas와 분리 강화) | Toast 시각 검증 통과 — elevation shadow로 충분 분리 |
+
+### 근거
+
+- M3 표준 부합 — canvas + 5단 점진 어두움 패턴
+- 단계 의미 정합 — Lowest=가장 밝음, dim 방향 점진 어두움
+- canvas(92)와 containerLow(98) 시각 분리 가능 — invisible 본문 해결
+- Modal / Card elevation 유지 — `containerLowest` L=100이 canvas L=92보다 8 더 밝음 (강한 시각 분리)
+- Tailwind slate 팔레트 일관 — slate-50 / slate-100 / slate-200 / slate-300 (custom hex 0)
+- Toast 시각 검증 통과 — `containerHigh` = canvas 동일색이지만 elevation shadow로 분리 충분
+
+### 결과
+
+- Light 모드 4 토큰 hex 변경 (`canvas` + `dim` + `container` + `containerHigh`)
+- visual breaking change (사용자 API 변경 0 — 토큰 이름 / 호출 본문 그대로)
+- 모든 화면 배경 색상 변경 (`canvas` slate-50 → slate-200)
+- `surface.container` 사용 컴포넌트 15+ 시각 영향 (Card / SearchInput / Input / Tooltip / ErrorView / EmptyState / Skeleton / LoadingView / SettingsRow / Chip / DataTable / Dialog / BottomSheetHost / PopupHost / Toast)
+- Dark 모드 변경 0 — Dark 시각 인상 완전 동일
+- 신규 토큰 0 + 신규 의존성 0
+- Figma 동기 별도 단계 (사용자 결정 또는 후속 진행)
+- 사용자 시각 검증 6 그룹 15 항목 통과 (점진 검증 패턴)
+
+### v2.x 진화 예정
+
+- State Layer 패턴 도입 (pressed / hover / disabled 일관화 — M3 state layer)
+- `surface.containerHighest` 토큰 추가 검토 (현재 4단, M3는 5단)
+- 다른 카테고리 색상 재검토 (primary / state 등)
