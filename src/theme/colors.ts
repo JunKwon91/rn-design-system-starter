@@ -179,18 +179,18 @@ export interface ColorsShape {
 // ----------------------------------------------------------------------------
 export const lightColors: ColorsShape = {
   bg: {
-    canvas: primitives.slate[50], // 거의 흰색 캔버스
+    canvas: primitives.slate[200], // 페이지 배경 (M3 surface 단계 정합 — 모든 surface 단계가 canvas보다 같거나 밝음)
     sectionMain: primitives.slateDark[900], // (라이트 모드인데도) 어두운 Section bg
     sectionSub: primitives.slate[950], //  └ mode swap 의도 — 같은 페이지에서
     //    라이트/다크 모드를 비교 시각화하기 위함
   },
   surface: {
     base: primitives.white,
-    dim: primitives.slate[100],
-    containerLowest: primitives.white,
-    containerLow: primitives.slate[50],
-    container: primitives.white,
-    containerHigh: primitives.slate[100],
+    dim: primitives.slate[300], // 가장 어두운 표면 (강조, canvas보다 어두움)
+    containerLowest: primitives.white, // 가장 밝음 (Modal/Card elevation)
+    containerLow: primitives.slate[50], // 약간 밝음
+    container: primitives.slate[100], // 표준 카드 (canvas보다 밝음, M3 단계 정합)
+    containerHigh: primitives.slate[200], // 강조 컨테이너 (canvas와 동일 L)
     inverse: primitives.slateDark[900], // 다크 surface 빌려옴 (Tooltip 등)
   },
   text: {
