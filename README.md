@@ -224,10 +224,13 @@ npm run ios      # 또는 npm run android
 ### Tabs
 ```tsx
 import { Tabs } from '@/components/display';
+import { Star } from 'lucide-react-native';
 
 const TABS = [
   { value: 'all', label: '전체' },
-  { value: 'stats', label: '통계' },
+  { value: 'stats', label: '통계', badge: 3 },                    // count badge (>99는 "99+" 자동)
+  { value: 'favorites', label: '즐겨찾기', icon: <Star size={16} /> }, // leading 아이콘
+  { value: 'archived', label: '보관함', disabled: true },          // 비활성 (onPress 차단 + opacity 0.5)
 ];
 
 const [active, setActive] = useState('all');
