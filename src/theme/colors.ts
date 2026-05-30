@@ -48,6 +48,7 @@ const primitives = {
     50: '#F8FAFC', // 가장 밝은 회색 (라이트 모드 배경)
     100: '#F1F5F9',
     200: '#E2E8F0',
+    250: '#D6DDE6', // 250은 Tailwind 표준 외 값 (Light containerHighest 전용)
     300: '#CBD5E1',
     400: '#94A3B8',
     450: '#757680', // 450은 Tailwind 표준 외 값
@@ -68,9 +69,11 @@ const primitives = {
     450: '#9CA0AD', // 450은 슬레이트 표준 외 값
     500: '#8C909F',
     700: '#424754',
+    720: '#2F333B', // 720은 슬레이트 표준 외 값 (Dark containerHighest 전용)
     780: '#272A31', // 780은 슬레이트 표준 외 값 (다크 컨테이너 high)
     800: '#1D2027', // 다크 컨테이너
     850: '#191B23', // 다크 컨테이너 low
+    870: '#1F2229', // 870은 슬레이트 표준 외 값 (Dark border.subtle 전용)
     900: '#10131A', // 다크 모드 캔버스 배경
     950: '#0B0E15',
   },
@@ -81,13 +84,16 @@ const primitives = {
     secondary: '#4CD7F6', // 보조 (시안)
     tertiary: '#FFB786', // 3차 (살구색, 거의 안 씀)
   },
-  // 상태 색상 — 의미가 정해진 색 (모드 무관)
+  // 상태 색상 — 의미를 가진 색
+  // Light/Dark 모드별 분리: Light는 어두운 surface 위 가독성을 위해 진한 톤, Dark는 옅은 톤.
   state: {
-    success: '#22C55E', // 성공/긍정 (초록)
-    warning: '#F59E0B', // 경고 (주황)
-    errorLight: '#DC2626', // 에러 — 라이트 모드용 (진한 빨강)
+    successLight: '#166534', // 성공 — 라이트 모드용 (green-800, white 위 7.13:1)
+    successDark: '#22C55E', // 성공 — 다크 모드용 (어두운 surface 위 가독)
+    warningLight: '#92400E', // 경고 — 라이트 모드용 (amber-800, white 위 7.09:1)
+    warningDark: '#F59E0B', // 경고 — 다크 모드용
+    errorLight: '#B91C1C', // 에러 — 라이트 모드용 (red-700, 모든 Light surface 위 4.5:1 통과)
     errorDark: '#FFB4AB', // 에러 — 다크 모드용 (밝은 살구빨강)
-    infoLight: '#3B82F6', // 정보 — 라이트 모드용 (진한 파랑)
+    infoLight: '#2563EB', // 정보 — 라이트 모드용 (blue-600, containerHigh 위 4.19:1)
     infoDark: '#ADC6FF', // 정보 — 다크 모드용 (옅은 파랑)
   },
   // 오버레이 색상 — 모달 backdrop scrim 등
@@ -123,13 +129,14 @@ export interface ColorsShape {
   };
   // surface = 카드, 패널 등 "들어올린(elevated)" 면.
   // 캔버스(bg) 위에 올라가는 컨텐츠 컨테이너.
+  // 5단 정합 (M3): Lowest → Low → container → High → Highest 순으로 단조.
   surface: {
     base: string; // 베이스 표면 (Dialog/Toast 등 최상위)
-    dim: string; // 가장 어두운 표면 (배경과 거의 동일)
     containerLowest: string; // 가장 밝은 컨테이너 (Input 등)
     containerLow: string; // 살짝 더 어두운 컨테이너 (헤더 등)
     container: string; // 표준 카드 배경
     containerHigh: string; // 강조된 컨테이너 (선택된 항목 등)
+    containerHighest: string; // 5단 마지막 (가장 강조된 컨테이너)
     inverse: string; // 반전 표면 — Tooltip 등 강조
   };
   // text = 글자 색상. 4단계 중요도 + 반전(inverse) 변형.
@@ -144,6 +151,10 @@ export interface ColorsShape {
     // text.primaryInverse(=밝은 색)를 쓰면 가독성 확보.
   };
   // border = 1px 선 색상.
+  // [subtle 사용 가이드]
+  // Light: containerHighest 표면 위에서는 명도차(ΔL*≈3)로 분리가 약하다 — 가시 가능하나 약함.
+  // Dark: container 표면(slateDark-800) 위에서는 명도차(ΔL*≈1)로 가시성 매우 약함 — 사용 비권장.
+  // (Dark 팔레트 재설계 사이클에서 5단 surface 간격 자체를 넓혀 구조적 해결 예정)
   border: {
     default: string; // 기본 보더
     subtle: string; // 매우 흐릿한 구분선
@@ -154,8 +165,6 @@ export interface ColorsShape {
   primary: {
     action: string; // 메인 버튼 배경
     onAction: string; // 메인 버튼 위 글자색
-    container: string; // 더 큰 강조 영역 배경
-    onContainer: string; // 그 위 글자색
   };
   // state = 의미를 가진 상태 색상.
   state: {
@@ -186,11 +195,11 @@ export const lightColors: ColorsShape = {
   },
   surface: {
     base: primitives.white,
-    dim: primitives.slate[300], // 가장 어두운 표면 (강조, canvas보다 어두움)
     containerLowest: primitives.white, // 가장 밝음 (Modal/Card elevation)
     containerLow: primitives.slate[50], // 약간 밝음
     container: primitives.slate[100], // 표준 카드 (canvas보다 밝음, M3 단계 정합)
     containerHigh: primitives.slate[200], // 강조 컨테이너 (canvas와 동일 L)
+    containerHighest: primitives.slate[250], // 5단 마지막 (가장 어두운 표면)
     inverse: primitives.slateDark[900], // 다크 surface 빌려옴 (Tooltip 등)
   },
   text: {
@@ -201,20 +210,18 @@ export const lightColors: ColorsShape = {
     secondaryInverse: primitives.slateDark[300],
   },
   border: {
-    default: primitives.slate[300],
-    subtle: primitives.slate[200],
+    default: primitives.slate[400],
+    subtle: primitives.slate[300],
     strong: primitives.slate[500],
     control: primitives.slate[450],
   },
   primary: {
     action: primitives.brand.primaryLight, // 진한 파랑 버튼
     onAction: '#FFFFFF', // 그 위 흰색 글자
-    container: '#DBEAFE', // 옅은 파랑 컨테이너
-    onContainer: '#1E3A8A', // 그 위 진한 파랑 글자
   },
   state: {
-    success: primitives.state.success,
-    warning: primitives.state.warning,
+    success: primitives.state.successLight,
+    warning: primitives.state.warningLight,
     error: primitives.state.errorLight, // 라이트 모드는 진한 빨강 사용
     info: primitives.state.infoLight, // 라이트 모드는 진한 파랑 사용
   },
@@ -239,11 +246,11 @@ export const darkColors: ColorsShape = {
   },
   surface: {
     base: primitives.slateDark[900],
-    dim: primitives.slateDark[900],
     containerLowest: primitives.slateDark[950],
     containerLow: primitives.slateDark[850],
     container: primitives.slateDark[800],
     containerHigh: primitives.slateDark[780],
+    containerHighest: primitives.slateDark[720], // 5단 마지막 (가장 밝은 표면)
     inverse: primitives.slate[50], // 라이트 surface 빌려옴 (Tooltip 등)
   },
   text: {
@@ -255,19 +262,17 @@ export const darkColors: ColorsShape = {
   },
   border: {
     default: primitives.slateDark[700],
-    subtle: primitives.slateDark[780],
+    subtle: primitives.slateDark[870],
     strong: primitives.slateDark[500],
     control: primitives.slateDark[450],
   },
   primary: {
     action: primitives.brand.primaryDark, // 다크 모드용 옅은 파랑
     onAction: primitives.slate[900], // 그 위 진한 글자 (대비 확보)
-    container: '#4D8EFF',
-    onContainer: '#00285D',
   },
   state: {
-    success: primitives.state.success,
-    warning: primitives.state.warning,
+    success: primitives.state.successDark,
+    warning: primitives.state.warningDark,
     error: primitives.state.errorDark, // 다크 모드는 밝은 살구빨강 (가독성)
     info: primitives.state.infoDark, // 다크 모드는 옅은 파랑 사용
   },
