@@ -41,10 +41,12 @@
 // - 의미: SegmentedControl selection control / Tabs navigation
 // ============================================================================
 
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import styled, { useTheme } from 'styled-components/native';
 
+import Badge from '@/components/display/Badge';
 import Text from '@/components/primitives/Text';
 
 export interface TabItem<T extends string = string> {
@@ -52,6 +54,16 @@ export interface TabItem<T extends string = string> {
   value: T;
   /** 표시 라벨. */
   label: string;
+  /** true면 탭이 비활성 — opacity 0.5 (interaction.disabledOpacity) + onPress 차단. */
+  disabled?: boolean;
+  /** 라벨 앞에 표시되는 leading 아이콘 (lucide-react-native 등 ReactNode). */
+  icon?: ReactNode;
+  /**
+   * 라벨 뒤에 표시되는 badge.
+   * number — count badge (99 초과 시 "99+" 자동).
+   * string — label badge.
+   */
+  badge?: number | string;
 }
 
 export interface TabsProps<T extends string = string> {
@@ -72,6 +84,12 @@ const TabColumn = styled.View`
   align-items: center;
   padding: 12px 16px 0px 16px;
   gap: 4px;
+`;
+
+const TabContentRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
 `;
 
 const Underline = styled.View<{ $active: boolean }>`
@@ -129,26 +147,43 @@ function Tabs<T extends string>({
         <Row>
           {tabs.map(tab => {
             const isActive = tab.value === value;
+            const isDisabled = tab.disabled ?? false;
             return (
               <Pressable
                 key={tab.value}
-                onPress={() => onChange(tab.value)}
+                onPress={() => !isDisabled && onChange(tab.value)}
+                disabled={isDisabled}
                 accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
+                accessibilityState={{ selected: isActive, disabled: isDisabled }}
                 accessibilityLabel={tab.label}
-                style={({ pressed }) => ({ opacity: pressed ? theme.interaction.pressedOpacity : 1 })}
+                style={({ pressed }) => ({
+                  opacity: isDisabled
+                    ? theme.interaction.disabledOpacity
+                    : pressed
+                      ? theme.interaction.pressedOpacity
+                      : 1,
+                })}
               >
                 <TabColumn>
-                  <Text
-                    variant="labelLg"
-                    style={{
-                      color: isActive
-                        ? theme.colors.text.primary
-                        : theme.colors.text.muted,
-                    }}
-                  >
-                    {tab.label}
-                  </Text>
+                  <TabContentRow>
+                    {tab.icon}
+                    <Text
+                      variant="labelLg"
+                      style={{
+                        color: isActive
+                          ? theme.colors.text.primary
+                          : theme.colors.text.muted,
+                      }}
+                    >
+                      {tab.label}
+                    </Text>
+                    {tab.badge !== undefined &&
+                      (typeof tab.badge === 'number' ? (
+                        <Badge type="count" value={tab.badge} size="sm" color="primary" />
+                      ) : (
+                        <Badge type="label" value={tab.badge} size="sm" color="primary" />
+                      ))}
+                  </TabContentRow>
                   <Underline $active={isActive} />
                 </TabColumn>
               </Pressable>

@@ -32,6 +32,7 @@
 //   action:  ChevronRight 아이콘
 // ============================================================================
 
+import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { ChevronRight, ExternalLink } from 'lucide-react-native';
 import styled, { useTheme } from 'styled-components/native';
@@ -64,9 +65,18 @@ const PickerRight = styled.View`
   gap: 8px;
 `;
 
+const RowLeft = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 1;
+`;
+
 type SettingsRowCommon = {
   /** 좌측에 표시되는 본문 라벨. */
   label: string;
+  /** 라벨 앞에 표시되는 leading 아이콘 (iOS HIG row 패턴, lucide-react-native 등 ReactNode). */
+  leadingIcon?: ReactNode;
   /** Row 컨테이너에 적용할 외부 스타일 override. */
   style?: StyleProp<ViewStyle>;
 };
@@ -160,7 +170,12 @@ export default function SettingsRow(props: SettingsRowProps) {
     }
   };
 
-  const labelEl = <Text variant="bodyBase">{props.label}</Text>;
+  const labelEl = (
+    <RowLeft>
+      {props.leadingIcon}
+      <Text variant="bodyBase">{props.label}</Text>
+    </RowLeft>
+  );
 
   if (props.kind === 'default') {
     return (

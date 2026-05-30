@@ -43,7 +43,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import styled from 'styled-components/native';
+import styled, { useTheme } from 'styled-components/native';
 
 import Text from '@/components/primitives/Text';
 
@@ -52,6 +52,8 @@ export interface SegmentedControlSegment<T extends string> {
   value: T;
   /** 표시 라벨. */
   label: string;
+  /** true면 세그먼트가 비활성 — opacity 0.5 (interaction.disabledOpacity) + onPress 차단. */
+  disabled?: boolean;
 }
 
 export interface SegmentedControlProps<T extends string> {
@@ -122,6 +124,7 @@ function SegmentedControl<T extends string>({
   onChange,
   style,
 }: SegmentedControlProps<T>) {
+  const theme = useTheme();
   const [containerWidth, setContainerWidth] = useState(0);
   const activeIndex = Math.max(
     0,
@@ -170,13 +173,16 @@ function SegmentedControl<T extends string>({
       {segmentWidth > 0 && <Indicator style={indicatorStyle} />}
       {segments.map(seg => {
         const isActive = seg.value === value;
+        const isDisabled = seg.disabled ?? false;
         return (
           <Segment
             key={seg.value}
-            onPress={() => onChange(seg.value)}
+            onPress={() => !isDisabled && onChange(seg.value)}
+            disabled={isDisabled}
             accessibilityRole="button"
-            accessibilityState={{ selected: isActive }}
+            accessibilityState={{ selected: isActive, disabled: isDisabled }}
             accessibilityLabel={seg.label}
+            style={isDisabled ? { opacity: theme.interaction.disabledOpacity } : undefined}
           >
             {({ pressed }) => (
               <SegmentInner $pressed={pressed}>

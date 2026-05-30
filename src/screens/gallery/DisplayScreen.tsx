@@ -23,7 +23,7 @@ const ChipRow = styled.View`
   gap: 8px;
 `;
 
-import { Plus, Star } from 'lucide-react-native';
+import { Bell, Home, Plus, Settings, Star, User } from 'lucide-react-native';
 
 import {
   Badge,
@@ -132,6 +132,32 @@ function TabsDemo8() {
       <Spacer size="md" />
       <Text variant="bodySm" color="muted">
         선택: {label}
+      </Text>
+    </Section>
+  );
+}
+
+type TabsExtValue = 'home' | 'alerts' | 'settings' | 'profile';
+
+function TabsDemoExtended() {
+  const [active, setActive] = useState<TabsExtValue>('home');
+  const theme = useTheme();
+  const iconColor = theme.colors.text.muted;
+  return (
+    <Section title="Tabs · API 확장 (icon · badge · disabled)">
+      <Tabs<TabsExtValue>
+        tabs={[
+          { value: 'home', label: '홈', icon: <Home size={16} color={iconColor} /> },
+          { value: 'alerts', label: '알림', icon: <Bell size={16} color={iconColor} />, badge: 3 },
+          { value: 'settings', label: '설정', icon: <Settings size={16} color={iconColor} />, disabled: true },
+          { value: 'profile', label: '프로필', icon: <User size={16} color={iconColor} />, badge: 'NEW' },
+        ]}
+        value={active}
+        onChange={setActive}
+      />
+      <Spacer size="md" />
+      <Text variant="bodySm" color="muted">
+        홈(icon) · 알림(icon + count badge 3) · 설정(disabled) · 프로필(icon + label badge "NEW")
       </Text>
     </Section>
   );
@@ -300,6 +326,23 @@ export default function DisplayScreen() {
                 선택: {themeMode}
               </Text>
             </Section>
+            <Spacer size="2xl" />
+
+            <Section title="SegmentedControl · disabled segment (시스템 비활성)">
+              <SegmentedControl
+                segments={[
+                  { value: 'dark', label: '다크' },
+                  { value: 'light', label: '라이트' },
+                  { value: 'system', label: '시스템', disabled: true },
+                ]}
+                value={themeMode === 'system' ? 'dark' : themeMode}
+                onChange={setThemeMode}
+              />
+              <Spacer size="md" />
+              <Text variant="bodySm" color="muted">
+                "시스템" 세그먼트 disabled — opacity 0.5 + onPress 차단
+              </Text>
+            </Section>
           </>
         )}
 
@@ -310,6 +353,8 @@ export default function DisplayScreen() {
             <TabsDemo5 />
             <Spacer size="2xl" />
             <TabsDemo8 />
+            <Spacer size="2xl" />
+            <TabsDemoExtended />
           </>
         )}
 
