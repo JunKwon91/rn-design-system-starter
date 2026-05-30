@@ -81,8 +81,8 @@ const Row = styled.View<{ $disabled: boolean; $pressed: boolean }>`
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  opacity: ${({ $disabled, $pressed }) =>
-    $disabled ? 0.5 : $pressed ? 0.7 : 1};
+  opacity: ${({ theme, $disabled, $pressed }) =>
+    $disabled ? theme.interaction.disabledOpacity : $pressed ? theme.interaction.pressedOpacity : 1};
 `;
 
 const Track = styled(Animated.View)<{ $w: number; $h: number }>`

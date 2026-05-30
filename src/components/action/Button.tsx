@@ -162,9 +162,9 @@ export default function Button({
       base.borderColor = theme.colors.border.strong;
     }
     if (blocked) {
-      base.opacity = 0.4;
+      base.opacity = theme.interaction.disabledOpacity;
     } else if (pressed) {
-      base.opacity = 0.7;
+      base.opacity = theme.interaction.pressedOpacity;
     }
     return [base, style];
   };

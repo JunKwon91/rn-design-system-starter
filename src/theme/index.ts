@@ -27,6 +27,7 @@
 // `type Colors`는 "값이 아닌 타입만 가져온다"는 의미.
 // type-only import는 빌드 시 완전히 제거되므로 번들 크기에 영향 없음.
 import { lightColors, darkColors, type Colors } from './colors';
+import { interaction } from './interaction';
 import { spacing, radius } from './spacing';
 import { typography } from './typography';
 
@@ -56,6 +57,7 @@ export interface AppTheme {
   spacing: typeof spacing;     // 간격 토큰 (typeof로 spacing 객체와 같은 구조 강제)
   radius: typeof radius;       // 반경 토큰
   typography: typeof typography; // 글꼴 토큰
+  interaction: typeof interaction; // interactive state opacity (mode 무관)
 }
 
 // ----------------------------------------------------------------------------
@@ -74,6 +76,7 @@ export const lightTheme: AppTheme = {
   spacing,    // spacing: spacing 단축 표기
   radius,     // radius: radius 단축 표기
   typography, // typography: typography 단축 표기
+  interaction,
 };
 
 // ----------------------------------------------------------------------------
@@ -89,6 +92,7 @@ export const darkTheme: AppTheme = {
   spacing,
   radius,
   typography,
+  interaction,
 };
 
 // ----------------------------------------------------------------------------
@@ -98,4 +102,4 @@ export const darkTheme: AppTheme = {
 // 가끔 색상 팔레트만 따로 쓰고 싶은 경우(예: 차트 라이브러리에 색상 배열 전달)에는
 // `import { darkColors } from './theme'`처럼 개별 토큰만 가져올 수 있도록 통로를 열어둠.
 // ----------------------------------------------------------------------------
-export { lightColors, darkColors, spacing, radius, typography };
+export { lightColors, darkColors, spacing, radius, typography, interaction };

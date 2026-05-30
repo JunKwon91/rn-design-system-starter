@@ -102,8 +102,8 @@ const Row = styled.View<{
   flex-direction: row;
   align-items: center;
   align-self: flex-start;
-  opacity: ${({ $disabled, $pressed }) =>
-    $disabled ? 0.5 : $pressed ? 0.7 : 1};
+  opacity: ${({ theme, $disabled, $pressed }) =>
+    $disabled ? theme.interaction.disabledOpacity : $pressed ? theme.interaction.pressedOpacity : 1};
 `;
 
 const LabelText = styled(Text)<{ $color: string; $fontSize: number }>`

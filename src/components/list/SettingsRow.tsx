@@ -16,6 +16,9 @@
 // [디자인 토큰]
 // Row: height 56, padding 16, gap 12
 //      bg surface.container (pressed surface.containerHigh)
+//      pressed 시 opacity 대신 배경 색상 변경 — iOS HIG row 패턴(Settings 앱)
+//      유지를 위한 의도적 설계 (ADR-35 참조). 다른 interactive 컴포넌트는
+//      theme.interaction.pressedOpacity 단순 alpha 패턴 적용.
 // Label: typography.bodyBase, color text.primary
 // Value: typography.bodyBase, color text.secondary
 // 보조 아이콘 (ChevronRight·ExternalLink): 18px, strokeWidth 2, color text.muted

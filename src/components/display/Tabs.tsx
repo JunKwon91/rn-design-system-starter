@@ -136,7 +136,7 @@ function Tabs<T extends string>({
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
                 accessibilityLabel={tab.label}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                style={({ pressed }) => ({ opacity: pressed ? theme.interaction.pressedOpacity : 1 })}
               >
                 <TabColumn>
                   <Text

@@ -91,7 +91,7 @@ const SegmentInner = styled.View<{ $pressed: boolean }>`
   flex: 1;
   align-items: center;
   justify-content: center;
-  opacity: ${({ $pressed }) => ($pressed ? 0.7 : 1)};
+  opacity: ${({ theme, $pressed }) => ($pressed ? theme.interaction.pressedOpacity : 1)};
 `;
 
 const SegmentLabel = styled(Text)<{ $active: boolean }>`

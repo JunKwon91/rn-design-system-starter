@@ -147,7 +147,7 @@ function FAB({
         accessibilityLabel={accessibilityLabel ?? label}
         style={({ pressed }) => [
           SHADOW,
-          { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
+          { opacity: disabled ? theme.interaction.disabledOpacity : pressed ? theme.interaction.pressedOpacity : 1 },
           style,
         ]}
         {...pressableProps}
